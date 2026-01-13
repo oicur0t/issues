@@ -1,0 +1,37 @@
+# macOS metadata
+__MACOSX/
+.DS_Store
+
+# Working directory - ignore build artifacts and dependencies
+issues/node_modules/
+issues/.next/
+issues/out/
+issues/build/
+issues/.vscode/
+issues/.idea/
+issues/.pytest_cache/
+
+# Environment files (keep examples)
+issues/.env
+issues/.env.local
+issues/.env.*.local
+!issues/.env.example
+!issues/.env.local.example
+
+# Build files
+issues/*.tsbuildinfo
+issues/next-env.d.ts
+
+# Logs
+issues/npm-debug.log*
+issues/yarn-debug.log*
+issues/yarn-error.log*
+
+# Certificates (sensitive)
+issues/Certs/*.pem
+!issues/Certs/.gitkeep
+
+# Misc
+issues/*.swp
+issues/*.swo
+issues/nul

@@ -1,0 +1,24 @@
+{
+  "name": "issue-tracker-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for Issue Tracker API - enables AI agents to manage issues, projects, users, and wiki",
+  "main": "build/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/index.js",
+    "dev": "tsc && node build/index.js",
+    "watch": "tsc --watch"
+  },
+  "keywords": ["mcp", "issue-tracker", "ai", "claude", "goose"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.16.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.14",
+    "typescript": "^5.8.3"
+  }
+}

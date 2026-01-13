@@ -1,0 +1,229 @@
+import { getCurrentSession } from '@/lib/auth'
+import { redirect } from 'next/navigation'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { FileText, BookOpen, Users, TrendingUp, Clock, FolderKanban, AlertCircle, Calendar } from 'lucide-react'
+import { getDashboardStats } from '@/app/dashboard/actions'
+
+export const dynamic = 'force-dynamic'
+
+export default async function HomePage() {
+  const session = await getCurrentSession()
+
+  if (!session?.isLoggedIn) {
+    redirect('/login')
+  }
+
+  // Fetch real dashboard statistics
+  const stats = await getDashboardStats()
+
+  return (
+    <div className="space-y-8">
+      <div className="border-4 border-black p-6 bg-secondary" style={{ boxShadow: '6px 6px 0px 0px rgba(0, 0, 0, 1)' }}>
+        <h1 className="text-5xl font-black text-foreground uppercase tracking-tight">Dashboard</h1>
+        <p className="text-lg font-bold text-foreground/80 mt-2">
+          Welcome back, {session.user.name}! Here's what's happening with your projects.
+        </p>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="bg-cyan-300">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-black uppercase">Total Issues</CardTitle>
+            <div className="p-2 bg-white border-3 border-black" style={{ boxShadow: '3px 3px 0px 0px rgba(0, 0, 0, 1)' }}>
+              <FileText className="h-5 w-5 text-black" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-5xl font-black">{stats.issues.total}</div>
+            <p className="text-xs font-bold text-black/70 mt-2">
+              {stats.issues.thisWeek} opened this week
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-pink-300">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-black uppercase">Backlog</CardTitle>
+            <div className="p-2 bg-white border-3 border-black" style={{ boxShadow: '3px 3px 0px 0px rgba(0, 0, 0, 1)' }}>
+              <TrendingUp className="h-5 w-5 text-black" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-5xl font-black">{stats.issues.backlog}</div>
+            <p className="text-xs font-bold text-black/70 mt-2">
+              {stats.issues.inProgress} in progress
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-yellow-300">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-black uppercase">Wiki Pages</CardTitle>
+            <div className="p-2 bg-white border-3 border-black" style={{ boxShadow: '3px 3px 0px 0px rgba(0, 0, 0, 1)' }}>
+              <BookOpen className="h-5 w-5 text-black" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-5xl font-black">{stats.wiki.total}</div>
+            <p className="text-xs font-bold text-black/70 mt-2">
+              {stats.wiki.published} published
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-green-300">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-black uppercase">Team Members</CardTitle>
+            <div className="p-2 bg-white border-3 border-black" style={{ boxShadow: '3px 3px 0px 0px rgba(0, 0, 0, 1)' }}>
+              <Users className="h-5 w-5 text-black" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-5xl font-black">{stats.users.total}</div>
+            <p className="text-xs font-bold text-black/70 mt-2">
+              {stats.users.active} active
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="bg-white">
+          <CardHeader>
+            <CardTitle className="text-2xl flex items-center gap-2">
+              <Clock className="h-6 w-6" />
+              This Week
+            </CardTitle>
+            <CardDescription>
+              Activity from the past 7 days
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center p-3 border-2 border-black bg-cyan-50">
+              <span className="font-bold text-sm">Issues Created</span>
+              <span className="text-2xl font-black">{stats.issues.thisWeek}</span>
+            </div>
+            <div className="flex justify-between items-center p-3 border-2 border-black bg-yellow-50">
+              <span className="font-bold text-sm">Wiki Pages Created</span>
+              <span className="text-2xl font-black">{stats.wiki.thisWeek}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white">
+          <CardHeader>
+            <CardTitle className="text-2xl flex items-center gap-2">
+              <Calendar className="h-6 w-6" />
+              This Month
+            </CardTitle>
+            <CardDescription>
+              Activity from the past 30 days
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center p-3 border-2 border-black bg-pink-50">
+              <span className="font-bold text-sm">Issues Created</span>
+              <span className="text-2xl font-black">{stats.issues.thisMonth}</span>
+            </div>
+            <div className="flex justify-between items-center p-3 border-2 border-black bg-green-50">
+              <span className="font-bold text-sm">Active Projects</span>
+              <span className="text-2xl font-black">{stats.projects.total}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white">
+          <CardHeader>
+            <CardTitle className="text-2xl flex items-center gap-2">
+              <AlertCircle className="h-6 w-6" />
+              Needs Attention
+            </CardTitle>
+            <CardDescription>
+              Issues requiring action
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center p-3 border-2 border-black bg-orange-50">
+              <span className="font-bold text-sm">Blocked Issues</span>
+              <span className="text-2xl font-black">{stats.issues.blocked}</span>
+            </div>
+            <div className="flex justify-between items-center p-3 border-2 border-black bg-blue-50">
+              <span className="font-bold text-sm">In Progress</span>
+              <span className="text-2xl font-black">{stats.issues.inProgress}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="bg-white">
+          <CardHeader>
+            <CardTitle className="text-3xl">Quick Actions</CardTitle>
+            <CardDescription>
+              Common tasks you might want to perform:
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <a
+              href="/issues/new"
+              className="block p-4 border-3 border-black bg-cyan-200 hover:translate-x-1 hover:translate-y-1 transition-transform font-bold"
+              style={{ boxShadow: '4px 4px 0px 0px rgba(0, 0, 0, 1)' }}
+            >
+              <h4 className="font-black text-lg">Create New Issue</h4>
+              <p className="text-sm font-bold text-black/70 mt-1">
+                Start tracking a new task or bug
+              </p>
+            </a>
+            <a
+              href="/wiki/new"
+              className="block p-4 border-3 border-black bg-pink-200 hover:translate-x-1 hover:translate-y-1 transition-transform font-bold"
+              style={{ boxShadow: '4px 4px 0px 0px rgba(0, 0, 0, 1)' }}
+            >
+              <h4 className="font-black text-lg">Create Wiki Page</h4>
+              <p className="text-sm font-bold text-black/70 mt-1">
+                Add documentation or knowledge base article
+              </p>
+            </a>
+            <a
+              href="/users"
+              className="block p-4 border-3 border-black bg-yellow-200 hover:translate-x-1 hover:translate-y-1 transition-transform font-bold"
+              style={{ boxShadow: '4px 4px 0px 0px rgba(0, 0, 0, 1)' }}
+            >
+              <h4 className="font-black text-lg">Manage Users</h4>
+              <p className="text-sm font-bold text-black/70 mt-1">
+                Add or manage team members
+              </p>
+            </a>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white">
+          <CardHeader>
+            <CardTitle className="text-3xl flex items-center gap-2">
+              <FolderKanban className="h-8 w-8" />
+              Projects Overview
+            </CardTitle>
+            <CardDescription>
+              Your project portfolio at a glance
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 border-3 border-black bg-gradient-to-br from-purple-100 to-pink-100" style={{ boxShadow: '4px 4px 0px 0px rgba(0, 0, 0, 1)' }}>
+              <div className="flex justify-between items-center">
+                <span className="font-black text-lg">Total Projects</span>
+                <span className="text-4xl font-black">{stats.projects.total}</span>
+              </div>
+            </div>
+            <a
+              href="/projects"
+              className="block p-4 border-3 border-black bg-green-200 hover:translate-x-1 hover:translate-y-1 transition-transform font-bold text-center"
+              style={{ boxShadow: '4px 4px 0px 0px rgba(0, 0, 0, 1)' }}
+            >
+              <h4 className="font-black text-lg">View All Projects</h4>
+            </a>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}

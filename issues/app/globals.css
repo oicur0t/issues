@@ -1,0 +1,339 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Neobrutalist color palette */
+    --background: 40 100% 97%;
+    --foreground: 0 0% 5%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 5%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 5%;
+    --primary: 271 91% 65%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 47 100% 63%;
+    --secondary-foreground: 0 0% 5%;
+    --muted: 0 0% 93%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 142 76% 59%;
+    --accent-foreground: 0 0% 5%;
+    --destructive: 0 93% 64%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 10%;
+    --input: 0 0% 10%;
+    --ring: 271 91% 65%;
+    --radius: 0rem;
+    --sidebar-bg: 271 91% 65%;
+    --sidebar-text: 0 0% 100%;
+    --cyan: 189 94% 43%;
+    --pink: 330 85% 65%;
+    --orange: 27 96% 61%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 94.1%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  /* Neobrutalist base styles */
+  html {
+    @apply h-full;
+  }
+}
+
+@layer components {
+  /* Neobrutalist Button styles */
+  .btn {
+    @apply inline-flex items-center justify-center text-sm font-bold border-4 border-black transition-all focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50;
+    box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+    transform: translate(0, 0);
+  }
+
+  .btn:hover {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+  }
+
+  .btn:active {
+    transform: translate(4px, 4px);
+    box-shadow: 0px 0px 0px 0px rgba(0, 0, 0, 1);
+  }
+
+  .btn-primary {
+    @apply btn bg-primary text-primary-foreground;
+  }
+
+  .btn-secondary {
+    @apply btn bg-secondary text-secondary-foreground;
+  }
+
+  .btn-outline {
+    @apply btn border-4 border-black bg-white text-black;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center text-sm font-bold border-0 transition-colors;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .btn-ghost:hover {
+    @apply bg-muted;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .btn-destructive {
+    @apply btn bg-destructive text-destructive-foreground;
+  }
+
+  .btn-sm {
+    @apply h-9 px-3 text-xs;
+  }
+
+  .btn-md {
+    @apply h-11 px-5 py-2;
+  }
+
+  .btn-lg {
+    @apply h-14 px-8 text-base;
+  }
+
+  /* Neobrutalist Card styles */
+  .card {
+    @apply border-4 border-black bg-card text-card-foreground;
+    box-shadow: 8px 8px 0px 0px rgba(0, 0, 0, 1);
+  }
+
+  .card-header {
+    @apply flex flex-col space-y-2 p-6;
+  }
+
+  .card-title {
+    @apply text-2xl font-black leading-none tracking-tight;
+  }
+
+  .card-description {
+    @apply text-sm text-muted-foreground font-bold;
+  }
+
+  .card-content {
+    @apply p-6 pt-0;
+  }
+
+  .card-footer {
+    @apply flex items-center p-6 pt-0;
+  }
+
+  /* Neobrutalist Input styles */
+  .input {
+    @apply flex h-12 w-full border-4 border-black bg-white px-4 py-2 text-sm font-bold file:border-0 file:bg-transparent file:text-sm file:font-bold placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50;
+    box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+  }
+
+  .input:focus {
+    box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 1);
+  }
+
+  .textarea {
+    @apply flex min-h-[120px] w-full border-4 border-black bg-white px-4 py-3 text-sm font-bold placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50;
+    box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+  }
+
+  .textarea:focus {
+    box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 1);
+  }
+
+  /* Neobrutalist Badge styles */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 text-xs font-black border-3 border-black transition-colors;
+    box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+  }
+
+  .badge-default {
+    @apply badge bg-primary text-primary-foreground;
+  }
+
+  .badge-secondary {
+    @apply badge bg-secondary text-secondary-foreground;
+  }
+
+  .badge-destructive {
+    @apply badge bg-destructive text-destructive-foreground;
+  }
+
+  .badge-outline {
+    @apply badge bg-white text-foreground border-2;
+  }
+
+  /* Status badge styles for issues */
+  .status-open {
+    @apply badge text-black;
+    background-color: #22d3ee;
+  }
+
+  .status-in-progress {
+    @apply badge text-black;
+    background-color: #facc15;
+  }
+
+  .status-blocked {
+    @apply badge text-white;
+    background-color: #f87171;
+  }
+
+  .status-closed {
+    @apply badge text-black;
+    background-color: #4ade80;
+  }
+
+  /* Priority badge styles for issues */
+  .priority-low {
+    @apply badge text-black;
+    background-color: #d1d5db;
+  }
+
+  .priority-medium {
+    @apply badge text-white;
+    background-color: #60a5fa;
+  }
+
+  .priority-high {
+    @apply badge text-black;
+    background-color: #fb923c;
+  }
+
+  .priority-critical {
+    @apply badge text-white;
+    background-color: #ef4444;
+  }
+
+  /* Navigation styles */
+  .nav-link {
+    @apply flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors;
+  }
+
+  .nav-link-active {
+    @apply nav-link bg-primary text-primary-foreground;
+  }
+
+  .nav-link-inactive {
+    @apply nav-link text-muted-foreground hover:text-foreground hover:bg-accent;
+  }
+
+  /* Form styles */
+  .form-group {
+    @apply space-y-2;
+  }
+
+  .form-label {
+    @apply text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70;
+  }
+
+  .form-error {
+    @apply text-sm text-destructive;
+  }
+
+  /* Table styles */
+  .table {
+    @apply w-full caption-bottom text-sm;
+  }
+
+  .table-header {
+    @apply border-b;
+  }
+
+  .table-row {
+    @apply border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted;
+  }
+
+  .table-head {
+    @apply h-12 px-4 text-left align-middle font-medium text-muted-foreground;
+  }
+
+  .table-cell {
+    @apply p-4 align-middle;
+  }
+
+  /* Loading spinner */
+  .spinner {
+    @apply animate-spin rounded-full border-2 border-gray-300 border-t-primary;
+  }
+
+  /* Markdown content styles */
+  .markdown-content h1 {
+    @apply text-3xl font-bold mt-8 mb-4;
+  }
+
+  .markdown-content h2 {
+    @apply text-2xl font-bold mt-6 mb-3;
+  }
+
+  .markdown-content h3 {
+    @apply text-xl font-bold mt-4 mb-2;
+  }
+
+  .markdown-content p {
+    @apply mb-4 leading-relaxed;
+  }
+
+  .markdown-content ul {
+    @apply list-disc pl-6 mb-4;
+  }
+
+  .markdown-content ol {
+    @apply list-decimal pl-6 mb-4;
+  }
+
+  .markdown-content li {
+    @apply mb-1;
+  }
+
+  .markdown-content code {
+    @apply bg-muted px-1 py-0.5 rounded text-sm font-mono;
+  }
+
+  .markdown-content pre {
+    @apply bg-muted p-4 rounded-lg overflow-x-auto mb-4;
+  }
+
+  .markdown-content pre code {
+    @apply bg-transparent p-0;
+  }
+
+  .markdown-content blockquote {
+    @apply border-l-4 border-primary pl-4 italic my-4;
+  }
+
+  .markdown-content a {
+    @apply text-primary hover:underline;
+  }
+}

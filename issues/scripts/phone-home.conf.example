@@ -1,0 +1,21 @@
+# Phone-Home Configuration File
+# Copy this file to /etc/phone-home.conf and edit the values
+
+# API endpoint URL (required)
+# Replace 'wopr' with your Issue Tracker server hostname or IP
+URL="http://wopr:3000/api/v1/assets/phone-home"
+# Or use: URL="http://wopr-wsl:3000/api/v1/assets/phone-home"
+# For production: URL="https://your-domain.com/api/v1/assets/phone-home"
+
+# API key for authentication (required)
+# Generate this in your Issue Tracker under Admin > API Keys
+# Required permission: assets:write
+API_KEY="your-api-key-here"
+
+# Cloud provider (optional)
+# Examples: AWS, DigitalOcean, Azure, GCP, On-Prem, etc.
+PROVIDER="Unknown"
+
+# Location/region (optional)
+# Examples: us-east-1, eu-west-1, Toronto DC, etc.
+LOCATION=""

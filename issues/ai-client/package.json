@@ -1,0 +1,23 @@
+{
+  "name": "issue-tracker-ai-client",
+  "version": "1.0.0",
+  "description": "Lightweight, portable API client for AI agents to interact with Issue Tracker",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "example": "tsx example.ts"
+  },
+  "keywords": [
+    "issue-tracker",
+    "api-client",
+    "ai-agent",
+    "typescript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.0.0"
+  }
+}
