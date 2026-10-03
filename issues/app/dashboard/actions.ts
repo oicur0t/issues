@@ -2,6 +2,7 @@
 
 import { getCollection } from '@/lib/mongodb'
 import { requireAuth } from '@/lib/auth'
+import { isApiAuthError } from '@/lib/api-errors'
 
 /**
  * Gets comprehensive dashboard statistics
@@ -121,7 +122,7 @@ export async function getDashboardStats() {
     }
   } catch (error) {
     console.error('Error getting dashboard stats:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to get dashboard statistics')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get dashboard statistics')
   }
 }
 
@@ -155,6 +156,6 @@ export async function getRecentActivity() {
     }
   } catch (error) {
     console.error('Error getting recent activity:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to get recent activity')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get recent activity')
   }
 }

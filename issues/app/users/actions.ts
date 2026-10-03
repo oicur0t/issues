@@ -13,6 +13,7 @@ import {
 import { isEmptyOrWhitespace, isValidEmail } from '@/lib/utils'
 import crypto from 'crypto'
 import bcrypt from 'bcrypt'
+import { isApiAuthError } from '@/lib/api-errors'
 
 const SALT_ROUNDS = 12
 
@@ -101,7 +102,7 @@ export async function createUser(data: CreateUserData): Promise<{ user: User, ap
     }
   } catch (error) {
     console.error('Error creating user:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to create user')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to create user')
   }
 }
 
@@ -123,7 +124,7 @@ export async function getUsers(): Promise<User[]> {
     return users as User[]
   } catch (error) {
     console.error('Error getting users:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to get users')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get users')
   }
 }
 
@@ -147,7 +148,7 @@ export async function getUser(id: string): Promise<User | null> {
     return foundUser as User | null
   } catch (error) {
     console.error('Error getting user:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to get user')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get user')
   }
 }
 
@@ -240,7 +241,7 @@ export async function updateUser(id: string, data: UpdateUserData): Promise<User
     return result.value
   } catch (error) {
     console.error('Error updating user:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to update user')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to update user')
   }
 }
 
@@ -276,7 +277,7 @@ export async function deleteUser(id: string): Promise<boolean> {
     return true
   } catch (error) {
     console.error('Error deleting user:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to delete user')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to delete user')
   }
 }
 
@@ -318,7 +319,7 @@ export async function getUserStats(): Promise<{
     }
   } catch (error) {
     console.error('Error getting user stats:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to get user statistics')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get user statistics')
   }
 }
 
@@ -340,7 +341,7 @@ export async function getAssignableUsers(): Promise<User[]> {
     return users as User[]
   } catch (error) {
     console.error('Error getting assignable users:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to get assignable users')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get assignable users')
   }
 }
 
@@ -384,7 +385,7 @@ export async function regenerateApiKey(userId: string): Promise<string> {
     return plainApiKey
   } catch (error) {
     console.error('Error regenerating API key:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to regenerate API key')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to regenerate API key')
   }
 }
 /**
@@ -404,7 +405,7 @@ export async function getCurrentUserProfile(): Promise<User | null> {
     return user as User | null
   } catch (error) {
     console.error('Error getting current user profile:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to get user profile')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get user profile')
   }
 }
 
@@ -442,6 +443,6 @@ export async function regenerateMyApiKey(): Promise<string> {
     return plainApiKey
   } catch (error) {
     console.error('Error regenerating API key:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to regenerate API key')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to regenerate API key')
   }
 }

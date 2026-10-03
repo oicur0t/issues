@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createApiError, createApiResponse } from '@/lib/api-auth'
+import { handleApiError } from '@/lib/api-errors'
 import { getIssue, updateIssue, deleteIssue } from '@/app/issues/actions'
 import { serializeForApi } from '@/lib/api-utils'
 import { UpdateIssueData } from '@/lib/types'
@@ -33,8 +34,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       data: serializeForApi(issue),
     })
   } catch (error) {
-    console.error('API error:', error)
-    return createApiError(500, 'Internal server error')
+    return handleApiError(error)
   }
 }
 
@@ -73,8 +73,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       data: serializeForApi(issue),
     })
   } catch (error) {
-    console.error('API error:', error)
-    return createApiError(500, error instanceof Error ? error.message : 'Internal server error')
+    return handleApiError(error, true)
   }
 }
 
@@ -97,7 +96,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       message: 'Issue deleted successfully',
     })
   } catch (error) {
-    console.error('API error:', error)
-    return createApiError(500, error instanceof Error ? error.message : 'Internal server error')
+    return handleApiError(error, true)
   }
 }

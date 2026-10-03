@@ -6,6 +6,7 @@ import { getCollection } from '@/lib/mongodb'
 import { requireUnifiedAuth } from '@/lib/unified-auth'
 import { Comment, CreateCommentData, UpdateCommentData } from '@/lib/types'
 import { isEmptyOrWhitespace } from '@/lib/utils'
+import { isApiAuthError } from '@/lib/api-errors'
 
 /**
  * Creates a new comment on an issue
@@ -55,7 +56,7 @@ export async function createComment(data: CreateCommentData): Promise<Comment> {
     } as any
   } catch (error) {
     console.error('Error creating comment:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to create comment')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to create comment')
   }
 }
 
@@ -99,7 +100,7 @@ export async function getComments(issueId: string): Promise<Comment[]> {
     })) as any
   } catch (error) {
     console.error('Error getting comments:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to get comments')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get comments')
   }
 }
 
@@ -150,7 +151,7 @@ export async function updateComment(commentId: string, data: UpdateCommentData):
     return updatedComment as Comment
   } catch (error) {
     console.error('Error updating comment:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to update comment')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to update comment')
   }
 }
 
@@ -184,6 +185,6 @@ export async function deleteComment(commentId: string): Promise<void> {
     revalidatePath(`/issues/${issueId}`)
   } catch (error) {
     console.error('Error deleting comment:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to delete comment')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to delete comment')
   }
 }

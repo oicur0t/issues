@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 import { ObjectId } from 'mongodb'
 import { UserSession, UserRole, AuthUser } from './types'
+import { ApiAuthError } from './api-errors'
 
 const MOCK_USER: AuthUser = {
   _id: new ObjectId('507f1f77bcf86cd799439011'), // Mock ObjectId
@@ -156,11 +157,11 @@ export async function requireAuth(requiredRole: UserRole = 'viewer'): Promise<Au
   const user = await getCurrentUser()
   
   if (!user) {
-    throw new Error('Authentication required')
+    throw new ApiAuthError('Authentication required', 401)
   }
 
   if (!(await hasRole(requiredRole))) {
-    throw new Error(`Insufficient permissions. Required role: ${requiredRole}`)
+    throw new ApiAuthError(`Insufficient permissions. Required role: ${requiredRole}`, 403)
   }
 
   return user

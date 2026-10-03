@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createApiError, createApiResponse } from '@/lib/api-auth'
+import { handleApiError } from '@/lib/api-errors'
 import { getUser } from '@/app/users/actions'
 import { serializeForApi } from '@/lib/api-utils'
 
@@ -31,7 +32,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
       data: serializeForApi(user),
     })
   } catch (error) {
-    console.error('API error:', error)
-    return createApiError(500, 'Internal server error')
+    return handleApiError(error)
   }
 }

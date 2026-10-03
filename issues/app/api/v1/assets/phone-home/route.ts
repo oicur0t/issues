@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createApiError, createApiResponse, authenticateApiRequest } from '@/lib/api-auth'
+import { handleApiError } from '@/lib/api-errors'
 import { getCollection } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
 import { Asset } from '@/lib/types'
@@ -134,7 +135,6 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Phone-home API error:', error)
-    return createApiError(500, error instanceof Error ? error.message : 'Internal server error')
+    return handleApiError(error, true)
   }
 }

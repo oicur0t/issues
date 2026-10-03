@@ -12,6 +12,7 @@ import {
   AssetFilter
 } from '@/lib/types/asset'
 import { isEmptyOrWhitespace } from '@/lib/utils'
+import { isApiAuthError } from '@/lib/api-errors'
 
 /**
  * Creates a new asset
@@ -76,7 +77,7 @@ export async function createAsset(data: CreateAssetData): Promise<Asset> {
     }
   } catch (error) {
     console.error('Error creating asset:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to create asset')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to create asset')
   }
 }
 
@@ -190,7 +191,7 @@ export async function getAssets(filter?: AssetFilter): Promise<AssetWithProjects
     return assetsWithProjects
   } catch (error) {
     console.error('Error getting assets:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to get assets')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get assets')
   }
 }
 
@@ -252,7 +253,7 @@ export async function getAsset(id: string): Promise<AssetWithProjects | null> {
     } as AssetWithProjects
   } catch (error) {
     console.error('Error getting asset:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to get asset')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get asset')
   }
 }
 
@@ -364,7 +365,7 @@ export async function updateAsset(id: string, data: UpdateAssetData): Promise<As
     return result as Asset
   } catch (error) {
     console.error('Error updating asset:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to update asset')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to update asset')
   }
 }
 
@@ -396,6 +397,6 @@ export async function deleteAsset(id: string): Promise<boolean> {
     return true
   } catch (error) {
     console.error('Error deleting asset:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to delete asset')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to delete asset')
   }
 }

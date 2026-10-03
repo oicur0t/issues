@@ -2,6 +2,7 @@
 
 import { getCollection } from '@/lib/mongodb'
 import { requireAuth } from '@/lib/auth'
+import { isApiAuthError } from '@/lib/api-errors'
 
 export async function cleanupOrphanedIssues() {
   try {
@@ -47,6 +48,6 @@ export async function cleanupOrphanedIssues() {
     }
   } catch (error) {
     console.error('Error cleaning up orphaned issues:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to cleanup orphaned issues')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to cleanup orphaned issues')
   }
 }

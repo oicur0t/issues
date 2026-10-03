@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createApiError, createApiResponse } from '@/lib/api-auth'
+import { handleApiError } from '@/lib/api-errors'
 import { getWikiPages, createWikiPage, searchWikiPages } from '@/app/wiki/actions'
 import { serializeForApi, parsePaginationParams } from '@/lib/api-utils'
 import { CreateWikiData, WikiFilter } from '@/lib/types'
@@ -58,8 +59,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('API error:', error)
-    return createApiError(500, 'Internal server error')
+    return handleApiError(error)
   }
 }
 
@@ -97,7 +97,6 @@ export async function POST(request: NextRequest) {
       201
     )
   } catch (error) {
-    console.error('API error:', error)
-    return createApiError(500, error instanceof Error ? error.message : 'Internal server error')
+    return handleApiError(error, true)
   }
 }

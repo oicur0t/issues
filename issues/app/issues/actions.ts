@@ -13,6 +13,7 @@ import {
 } from '@/lib/types'
 import { isEmptyOrWhitespace } from '@/lib/utils'
 import { getNextIssueNumber } from '@/app/projects/actions'
+import { isApiAuthError } from '@/lib/api-errors'
 
 /**
  * Creates a new issue
@@ -86,7 +87,7 @@ export async function createIssue(data: CreateIssueData): Promise<Issue> {
     }
   } catch (error) {
     console.error('Error creating issue:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to create issue')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to create issue')
   }
 }
 
@@ -220,7 +221,7 @@ export async function getIssues(filter: IssueFilter = {}): Promise<IssueWithAssi
     return issuesWithAssignees
   } catch (error) {
     console.error('Error getting issues:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to get issues')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get issues')
   }
 }
 
@@ -284,7 +285,7 @@ export async function getIssue(id: string): Promise<IssueWithAssignee | null> {
     } as IssueWithAssignee
   } catch (error) {
     console.error('Error getting issue:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to get issue')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get issue')
   }
 }
 
@@ -365,7 +366,7 @@ export async function updateIssue(id: string, data: UpdateIssueData): Promise<Is
     return result as Issue
   } catch (error) {
     console.error('Error updating issue:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to update issue')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to update issue')
   }
 }
 
@@ -413,7 +414,7 @@ export async function deleteIssue(id: string): Promise<boolean> {
     return true
   } catch (error) {
     console.error('Error deleting issue:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to delete issue')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to delete issue')
   }
 }
 
@@ -460,7 +461,7 @@ export async function getIssueStats(): Promise<{
     }
   } catch (error) {
     console.error('Error getting issue stats:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to get issue statistics')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get issue statistics')
   }
 }
 
@@ -483,6 +484,6 @@ export async function getIssueTags(): Promise<string[]> {
     return tags.map(tag => tag._id)
   } catch (error) {
     console.error('Error getting issue tags:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to get issue tags')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get issue tags')
   }
 }

@@ -11,6 +11,7 @@ import {
   ProjectWithCreator
 } from '@/lib/types/project'
 import { isEmptyOrWhitespace } from '@/lib/utils'
+import { isApiAuthError } from '@/lib/api-errors'
 
 /**
  * Creates a new project
@@ -67,7 +68,7 @@ export async function createProject(data: CreateProjectData): Promise<Project> {
     }
   } catch (error) {
     console.error('Error creating project:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to create project')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to create project')
   }
 }
 
@@ -121,7 +122,7 @@ export async function getProjects(): Promise<ProjectWithCreator[]> {
     return projectsWithCreators
   } catch (error) {
     console.error('Error getting projects:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to get projects')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get projects')
   }
 }
 
@@ -164,7 +165,7 @@ export async function getProject(id: string): Promise<ProjectWithCreator | null>
     } as ProjectWithCreator
   } catch (error) {
     console.error('Error getting project:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to get project')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get project')
   }
 }
 
@@ -203,7 +204,7 @@ export async function getProjectByKey(key: string): Promise<ProjectWithCreator |
     } as ProjectWithCreator
   } catch (error) {
     console.error('Error getting project by key:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to get project')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get project')
   }
 }
 
@@ -280,7 +281,7 @@ export async function updateProject(id: string, data: UpdateProjectData): Promis
     return result as Project
   } catch (error) {
     console.error('Error updating project:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to update project')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to update project')
   }
 }
 
@@ -319,7 +320,7 @@ export async function deleteProject(id: string): Promise<boolean> {
     return true
   } catch (error) {
     console.error('Error deleting project:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to delete project')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to delete project')
   }
 }
 
@@ -364,7 +365,7 @@ export async function getNextIssueNumber(projectId: string): Promise<string> {
     return issueNumber
   } catch (error) {
     console.error('Error getting next issue number:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to generate issue number')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to generate issue number')
   }
 }
 
@@ -422,6 +423,6 @@ export async function recalculateProjectIssueCounters(): Promise<{
     return { updated, results }
   } catch (error) {
     console.error('Error recalculating project issue counters:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to recalculate project issue counters')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to recalculate project issue counters')
   }
 }

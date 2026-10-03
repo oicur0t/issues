@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createApiError, createApiResponse } from '@/lib/api-auth'
+import { handleApiError } from '@/lib/api-errors'
 import { getAsset, updateAsset, deleteAsset } from '@/app/assets/actions'
 import { serializeForApi } from '@/lib/api-utils'
 import { UpdateAssetData } from '@/lib/types'
@@ -26,8 +27,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     return createApiResponse({ data: serializeForApi(asset) })
   } catch (error) {
-    console.error('API error:', error)
-    return createApiError(500, error instanceof Error ? error.message : 'Internal server error')
+    return handleApiError(error, true)
   }
 }
 
@@ -63,8 +63,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     return createApiResponse({ data: serializeForApi(asset) })
   } catch (error) {
-    console.error('API error:', error)
-    return createApiError(500, error instanceof Error ? error.message : 'Internal server error')
+    return handleApiError(error, true)
   }
 }
 
@@ -80,7 +79,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 
     return createApiResponse({ message: 'Asset deleted successfully' })
   } catch (error) {
-    console.error('API error:', error)
-    return createApiError(500, error instanceof Error ? error.message : 'Internal server error')
+    return handleApiError(error, true)
   }
 }

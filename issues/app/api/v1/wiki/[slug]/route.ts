@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createApiError, createApiResponse } from '@/lib/api-auth'
+import { handleApiError } from '@/lib/api-errors'
 import { getWikiPage, updateWikiPage, deleteWikiPage } from '@/app/wiki/actions'
 import { serializeForApi } from '@/lib/api-utils'
 import { UpdateWikiData } from '@/lib/types'
@@ -33,8 +34,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       data: serializeForApi(wikiPage),
     })
   } catch (error) {
-    console.error('API error:', error)
-    return createApiError(500, 'Internal server error')
+    return handleApiError(error)
   }
 }
 
@@ -69,8 +69,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       data: serializeForApi(wikiPage),
     })
   } catch (error) {
-    console.error('API error:', error)
-    return createApiError(500, error instanceof Error ? error.message : 'Internal server error')
+    return handleApiError(error, true)
   }
 }
 
@@ -93,7 +92,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       message: 'Wiki page deleted successfully',
     })
   } catch (error) {
-    console.error('API error:', error)
-    return createApiError(500, error instanceof Error ? error.message : 'Internal server error')
+    return handleApiError(error, true)
   }
 }

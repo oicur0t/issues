@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createApiError, createApiResponse } from '@/lib/api-auth'
+import { handleApiError } from '@/lib/api-errors'
 import { createComment, getComments } from '@/app/issues/[id]/comments/actions'
 import { serializeForApi } from '@/lib/api-utils'
 
@@ -19,8 +20,7 @@ export async function GET(
       data: serializeForApi(comments),
     })
   } catch (error) {
-    console.error('API error:', error)
-    return createApiError(500, error instanceof Error ? error.message : 'Internal server error')
+    return handleApiError(error, true)
   }
 }
 
@@ -50,7 +50,6 @@ export async function POST(
       201
     )
   } catch (error) {
-    console.error('API error:', error)
-    return createApiError(500, error instanceof Error ? error.message : 'Internal server error')
+    return handleApiError(error, true)
   }
 }

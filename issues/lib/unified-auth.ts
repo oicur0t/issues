@@ -8,6 +8,7 @@ import { ObjectId } from 'mongodb'
 import { UserRole, AuthUser } from './types'
 import { getCurrentUser } from './auth'
 import crypto from 'crypto'
+import { ApiAuthError } from './api-errors'
 
 export interface AuthContext {
   user: AuthUser
@@ -85,7 +86,7 @@ export async function requireUnifiedAuth(requiredRole: UserRole = 'viewer'): Pro
   const context = await getAuthContext()
 
   if (!context) {
-    throw new Error('Authentication required')
+    throw new ApiAuthError('Authentication required', 401)
   }
 
   // Check role hierarchy
@@ -100,7 +101,7 @@ export async function requireUnifiedAuth(requiredRole: UserRole = 'viewer'): Pro
   const requiredRoleLevel = roleHierarchy[requiredRole]
 
   if (userRoleLevel < requiredRoleLevel) {
-    throw new Error(`Insufficient permissions. Required role: ${requiredRole}, user role: ${context.user.role}`)
+    throw new ApiAuthError(`Insufficient permissions. Required role: ${requiredRole}, user role: ${context.user.role}`, 403)
   }
 
   return context.user

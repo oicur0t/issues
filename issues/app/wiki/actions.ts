@@ -13,6 +13,7 @@ import {
   WikiSearchResult
 } from '@/lib/types'
 import { isEmptyOrWhitespace, createSlug } from '@/lib/utils'
+import { isApiAuthError } from '@/lib/api-errors'
 
 /**
  * Creates a new wiki page
@@ -76,7 +77,7 @@ export async function createWikiPage(data: CreateWikiData): Promise<WikiPage> {
     }
   } catch (error) {
     console.error('Error creating wiki page:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to create wiki page')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to create wiki page')
   }
 }
 
@@ -162,7 +163,7 @@ export async function getWikiPages(filter: WikiFilter = {}): Promise<WikiPageWit
     return wikiPagesWithAuthors
   } catch (error) {
     console.error('Error getting wiki pages:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to get wiki pages')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get wiki pages')
   }
 }
 
@@ -209,7 +210,7 @@ export async function getWikiPage(slug: string): Promise<WikiPageWithAuthor | nu
     } as WikiPageWithAuthor
   } catch (error) {
     console.error('Error getting wiki page:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to get wiki page')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get wiki page')
   }
 }
 
@@ -313,7 +314,7 @@ export async function updateWikiPage(slug: string, data: UpdateWikiData): Promis
     return result as WikiPage
   } catch (error) {
     console.error('Error updating wiki page:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to update wiki page')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to update wiki page')
   }
 }
 
@@ -341,7 +342,7 @@ export async function deleteWikiPage(slug: string): Promise<boolean> {
     return true
   } catch (error) {
     console.error('Error deleting wiki page:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to delete wiki page')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to delete wiki page')
   }
 }
 
@@ -411,7 +412,7 @@ export async function searchWikiPages(query: string): Promise<WikiSearchResult[]
     return searchResults
   } catch (error) {
     console.error('Error searching wiki pages:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to search wiki pages')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to search wiki pages')
   }
 }
 
@@ -435,7 +436,7 @@ export async function getWikiTags(): Promise<string[]> {
     return tags.map(tag => tag._id)
   } catch (error) {
     console.error('Error getting wiki tags:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to get wiki tags')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get wiki tags')
   }
 }
 
@@ -466,6 +467,6 @@ export async function getWikiStats(): Promise<{
     }
   } catch (error) {
     console.error('Error getting wiki stats:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to get wiki statistics')
+    throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get wiki statistics')
   }
 }
