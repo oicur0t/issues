@@ -1,4 +1,4 @@
-import { createApiResponse } from '@/lib/api-auth'
+import { createApiError, createApiResponse } from '@/lib/api-auth'
 import { handleApiError } from '@/lib/api-errors'
 import { getTailscaleStatus, syncTailscaleNow } from '@/app/assets/tailscale-actions'
 import { serializeForApi } from '@/lib/api-utils'
@@ -22,8 +22,11 @@ export async function GET() {
  */
 export async function POST() {
   try {
-    const summary = await syncTailscaleNow()
-    return createApiResponse({ data: serializeForApi(summary) })
+    const result = await syncTailscaleNow()
+    if (!result.ok) {
+      return createApiError(result.status, result.error)
+    }
+    return createApiResponse({ data: serializeForApi(result.summary) })
   } catch (error) {
     return handleApiError(error, true)
   }

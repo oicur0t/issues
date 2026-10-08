@@ -263,7 +263,11 @@ describe('tailscale client', () => {
     const fetchImpl = (async () => okJson({ message: 'invalid client' }, 401)) as any
     await assert.rejects(
       () => getAccessToken({ clientId: 'id', clientSecret: 'supersecret' }, fetchImpl),
-      (e: Error) => e instanceof TailscaleError && !e.message.includes('supersecret') && /401/.test(e.message)
+      (e: Error) =>
+        e instanceof TailscaleError &&
+        !e.message.includes('supersecret') &&
+        /401/.test(e.message) &&
+        e.message.includes('invalid client') // Tailscale's own message is surfaced for diagnosis
     )
   })
 

@@ -25,6 +25,17 @@ type Sleep = (ms: number) => Promise<void>
 
 const defaultSleep: Sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 
+/** Tailscale's own error text (e.g. "API token invalid"); it never echoes credentials back */
+async function errorDetail(response: Response): Promise<string> {
+  try {
+    const body = await response.json()
+    const message = typeof body?.message === 'string' ? body.message : typeof body?.error === 'string' ? body.error : ''
+    return message ? `: ${message.slice(0, 200)}` : ''
+  } catch {
+    return ''
+  }
+}
+
 /** Tokens last one hour (not configurable), so we fetch a new one per sync run */
 export async function getAccessToken(
   credentials: TailscaleCredentials,
@@ -48,7 +59,9 @@ export async function getAccessToken(
   }
 
   if (!response.ok) {
-    throw new TailscaleError(`Tailscale token request failed (${response.status}); check the OAuth client id and secret`)
+    throw new TailscaleError(
+      `Tailscale token request failed (${response.status}${await errorDetail(response)}); check the OAuth client id and secret`
+    )
   }
 
   const data = await response.json().catch(() => null)
@@ -88,7 +101,9 @@ export async function fetchDevices(
 
       const retryable = response.status === 429 || response.status >= 500
       if (!retryable) {
-        throw new TailscaleError(`Tailscale devices request failed (${response.status}); check the OAuth client has the devices:core:read scope`)
+        throw new TailscaleError(
+          `Tailscale devices request failed (${response.status}${await errorDetail(response)}); check the OAuth client has the devices:core:read scope`
+        )
       }
     }
 

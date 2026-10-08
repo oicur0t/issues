@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { requireUnifiedAuth as requireAuth } from '@/lib/unified-auth'
-import { ApiAuthError, isApiAuthError } from '@/lib/api-errors'
+import { isApiAuthError } from '@/lib/api-errors'
 import {
   getTailscaleConfig,
   getTailscaleSyncState,
@@ -34,16 +34,25 @@ export async function getTailscaleStatus(): Promise<TailscaleStatus> {
   }
 }
 
+export type TailscaleSyncResult =
+  | { ok: true; summary: TailscaleSyncSummary }
+  | { ok: false; error: string; status: number }
+
 /**
  * Runs a Tailscale sync now. Newly discovered assets are attributed to the caller.
+ * Expected failures (not configured, Tailscale rejected us, safety guard) are returned,
+ * not thrown: production Next.js masks thrown messages, and these are the ones users need to read.
  */
-export async function syncTailscaleNow(): Promise<TailscaleSyncSummary> {
+export async function syncTailscaleNow(): Promise<TailscaleSyncResult> {
   try {
     const user = await requireAuth('developer')
 
     if (!getTailscaleConfig().configured) {
-      // 400: nothing the server can do until credentials are set
-      throw new ApiAuthError('Tailscale sync is not configured: set TAILSCALE_OAUTH_CLIENT_ID and TAILSCALE_OAUTH_CLIENT_SECRET', 400)
+      return {
+        ok: false,
+        status: 400,
+        error: 'Tailscale sync is not configured: set TAILSCALE_OAUTH_CLIENT_ID and TAILSCALE_OAUTH_CLIENT_SECRET',
+      }
     }
 
     const summary = await runTailscaleSync(user._id)
@@ -51,8 +60,11 @@ export async function syncTailscaleNow(): Promise<TailscaleSyncSummary> {
     revalidatePath('/assets')
     revalidatePath('/')
 
-    return summary
+    return { ok: true, summary }
   } catch (error) {
+    if (error instanceof Error && error.name === 'TailscaleError') {
+      return { ok: false, status: 502, error: error.message }
+    }
     console.error('Error syncing Tailscale:', error)
     throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Tailscale sync failed')
   }

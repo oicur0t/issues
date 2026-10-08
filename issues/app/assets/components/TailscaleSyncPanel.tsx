@@ -37,13 +37,18 @@ export function TailscaleSyncPanel() {
     setResult(null)
     startTransition(async () => {
       try {
-        const s = await syncTailscaleNow()
-        setResult(
-          `${s.devices} devices: ${s.added} added, ${s.adopted} linked, ${s.updated} updated, ` +
-            `${s.reactivated} reactivated, ${s.removed} removed`
-        )
+        const outcome = await syncTailscaleNow()
+        if (outcome.ok) {
+          const s = outcome.summary
+          setResult(
+            `${s.devices} devices: ${s.added} added, ${s.adopted} linked, ${s.updated} updated, ` +
+              `${s.reactivated} reactivated, ${s.removed} removed`
+          )
+          router.refresh()
+        } else {
+          setError(outcome.error)
+        }
         await load()
-        router.refresh()
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Sync failed')
         await load()
