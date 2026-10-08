@@ -27,7 +27,7 @@ interface FeatureFormProps {
   }
   projects?: Array<{ _id: string; name: string; key: string }>
   users?: Array<{ _id: string; name: string }>
-  onSuccess?: () => void
+  onSuccess?: (warnings?: string[]) => void
   onCancel?: () => void
 }
 
@@ -66,7 +66,7 @@ export function FeatureForm({ feature, projects = [], users = [], onSuccess, onC
       const ownerId = formData.ownerId === NO_OWNER ? undefined : formData.ownerId
 
       if (feature) {
-        await updateFeature(feature._id, {
+        const updated = await updateFeature(feature._id, {
           title: formData.title,
           description: formData.description,
           acceptanceCriteria: formData.acceptanceCriteria,
@@ -78,7 +78,7 @@ export function FeatureForm({ feature, projects = [], users = [], onSuccess, onC
           targetDate: formData.targetDate ? new Date(formData.targetDate) : null,
         })
         router.refresh()
-        onSuccess?.()
+        onSuccess?.(updated.warnings)
       } else {
         if (!formData.projectId) {
           throw new Error('Please select a project')

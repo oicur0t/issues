@@ -182,8 +182,16 @@ export async function getIssues(filter: IssueFilter = {}): Promise<IssueWithAssi
       .find({ _id: { $in: Array.from(projectIds).map(id => new ObjectId(id)) } })
       .toArray()
 
+    const featureIds = Array.from(new Set(issues.filter(i => i.featureId).map(i => i.featureId.toString())))
+    const features = featureIds.length > 0
+      ? await (await getCollection('features'))
+          .find({ _id: { $in: featureIds.map(id => new ObjectId(id)) } })
+          .toArray()
+      : []
+
     const userMap = new Map(users.map(user => [user._id.toString(), user]))
     const projectMap = new Map(projects.map(project => [project._id.toString(), project]))
+    const featureMap = new Map(features.map(feature => [feature._id.toString(), feature]))
 
     // Transform issues to include user and project details
     const issuesWithAssignees: IssueWithAssignee[] = issues.map(issue => {
@@ -199,8 +207,15 @@ export async function getIssues(filter: IssueFilter = {}): Promise<IssueWithAssi
         console.warn('Project not found for issue:', issue._id?.toString(), 'projectId:', issue.projectId?.toString())
       }
 
+      const feature = issue.featureId ? featureMap.get(issue.featureId.toString()) : undefined
+
       return {
         ...issue,
+        feature: feature ? {
+          _id: feature._id,
+          featureNumber: feature.featureNumber,
+          title: feature.title,
+        } : undefined,
         project: project ? {
           _id: project._id,
           name: project.name,

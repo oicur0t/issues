@@ -92,7 +92,10 @@ export function FeatureViewClient({ feature, issues, users, canEdit }: FeatureVi
               targetDate: feature.targetDate,
             }}
             users={users}
-            onSuccess={() => setIsEditing(false)}
+            onSuccess={(warnings) => {
+              setWarning(warnings?.join('; ') || null)
+              setIsEditing(false)
+            }}
             onCancel={() => setIsEditing(false)}
           />
         </CardContent>

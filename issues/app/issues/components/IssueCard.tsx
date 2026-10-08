@@ -5,7 +5,7 @@ import { IssueWithAssignee } from '@/lib/types'
 import { InlineStatusSelect } from './InlineStatusSelect'
 import { InlinePrioritySelect } from './InlinePrioritySelect'
 import { formatDate, getUserInitials, generateAvatarColor } from '@/lib/utils'
-import { Calendar, User, Tag, FolderKanban } from 'lucide-react'
+import { Calendar, User, Tag, FolderKanban, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface IssueCardProps {
@@ -41,6 +41,17 @@ export function IssueCard({ issue, className }: IssueCardProps) {
                 <FolderKanban className="h-3 w-3" />
                 {issue.project.key}
               </Link>
+              {issue.feature && (
+                <Link
+                  href={`/features/${issue.feature._id.toString()}`}
+                  title={issue.feature.title}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-secondary border-2 border-black text-xs font-bold hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                  style={{ boxShadow: '1px 1px 0px 0px rgba(0, 0, 0, 1)' }}
+                >
+                  <Sparkles className="h-3 w-3" />
+                  {issue.feature.featureNumber}
+                </Link>
+              )}
             </div>
 
             <Link
