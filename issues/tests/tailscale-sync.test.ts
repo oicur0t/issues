@@ -107,6 +107,17 @@ describe('planSync', () => {
     assert.deepEqual(g.tags, ['tailscale'])
   })
 
+  test('a device reporting hostname "localhost" is named from its MagicDNS label', () => {
+    const ipad: TailscaleDevice = {
+      ...byName('greenmachine'),
+      nodeId: 'nIPAD',
+      name: 'ipad-pro-12-9-gen-3.tail6fe843.ts.net',
+      hostname: 'localhost',
+    }
+    const plan = planSync([], [ipad], NOW, CFG, CREATED_BY)
+    assert.equal(plan.inserts[0].name, 'ipad-pro-12-9-gen-3')
+  })
+
   test('existing assets are adopted by Tailscale IP or hostname, not duplicated', () => {
     const plan = planSync([manualOrac(), manualWopr()], devices, NOW, CFG, CREATED_BY)
     assert.equal(plan.inserts.length, 2) // greenmachine + sooke-srv only

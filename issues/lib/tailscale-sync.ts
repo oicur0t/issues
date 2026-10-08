@@ -142,6 +142,11 @@ export function toTailscaleInfo(device: TailscaleDevice, now: Date, cfg: SyncCon
 
 const lower = (s?: string) => (s ?? '').toLowerCase()
 
+function assetName(device: TailscaleDevice): string {
+  const label = device.name.split('.')[0]
+  return device.hostname && lower(device.hostname) !== 'localhost' ? device.hostname : label
+}
+
 function matchesByAddressOrHostname(asset: ExistingAsset, device: TailscaleDevice): boolean {
   const addresses = new Set((device.addresses ?? []).map(lower))
   if ((asset.ipAddresses ?? []).some(ip => addresses.has(lower(ip)))) return true
@@ -198,7 +203,8 @@ export function planSync(
     }
 
     plan.inserts.push({
-      name: device.hostname || device.name.split('.')[0],
+      // iOS (and some others) report the hostname "localhost"; the MagicDNS label is unique and meaningful
+      name: assetName(device),
       hostname: device.name,
       ipAddresses: device.addresses ?? [],
       type: 'host',
