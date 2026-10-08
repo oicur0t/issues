@@ -121,6 +121,15 @@ Add to your Goose configuration:
 - `get_issue_comments` - Get issue comments
 - `add_issue_comment` - Add comment to issue
 
+### Feature Management
+- `list_features` - List features with filtering
+- `get_feature` - Get feature details and progress (accepts ID or number like `CUS-F001`)
+- `create_feature` - Create new feature
+- `update_feature` - Update feature (status, owner, criteria, ...)
+- `delete_feature` - Delete feature (linked issues are unlinked)
+- `get_feature_issues` - List issues linked to a feature
+- `link_issue_to_feature` / `unlink_issue_from_feature` - Manage links
+
 ### Project Management
 - `list_projects` - List all projects
 - `get_project` - Get project details

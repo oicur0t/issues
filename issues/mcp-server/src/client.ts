@@ -1,4 +1,4 @@
-import { ClientConfig, Issue, Project, User, WikiPage, Comment, CreateIssueData, UpdateIssueData, CreateProjectData, UpdateProjectData, CreateWikiData, UpdateWikiData, CreateCommentData, UpdateCommentData, IssueFilter, WikiFilter } from './types.js';
+import { ClientConfig, Issue, Project, User, WikiPage, Comment, CreateIssueData, UpdateIssueData, CreateProjectData, UpdateProjectData, CreateWikiData, UpdateWikiData, CreateCommentData, UpdateCommentData, IssueFilter, WikiFilter, Feature, CreateFeatureData, UpdateFeatureData, FeatureFilter } from './types.js';
 
 export class IssueTrackerClient {
   private baseURL: string;
@@ -57,6 +57,7 @@ export class IssueTrackerClient {
       if (filter.priority) params.append('priority', filter.priority.join(','));
       if (filter.assigneeId) params.append('assigneeId', filter.assigneeId);
       if (filter.reporterId) params.append('reporterId', filter.reporterId);
+      if (filter.featureId) params.append('featureId', filter.featureId);
       if (filter.tags) params.append('tags', filter.tags.join(','));
       if (filter.search) params.append('search', filter.search);
 
@@ -120,6 +121,60 @@ export class IssueTrackerClient {
 
   async deleteProject(id: string): Promise<void> {
     return this.request<void>('DELETE', `/projects/${id}`);
+  }
+
+  // Features API
+  async listFeatures(filter?: FeatureFilter): Promise<Feature[]> {
+    let path = '/features';
+
+    if (filter) {
+      const params = new URLSearchParams();
+
+      if (filter.projectId) params.append('projectId', filter.projectId);
+      if (filter.status) params.append('status', filter.status.join(','));
+      if (filter.priority) params.append('priority', filter.priority.join(','));
+      if (filter.ownerId) params.append('ownerId', filter.ownerId);
+      if (filter.tags) params.append('tags', filter.tags.join(','));
+      if (filter.search) params.append('search', filter.search);
+
+      const queryString = params.toString();
+      if (queryString) path += `?${queryString}`;
+    }
+
+    const response = await this.request<{ data: Feature[] }>('GET', path);
+    return response.data;
+  }
+
+  async getFeature(id: string): Promise<Feature> {
+    const response = await this.request<{ data: Feature }>('GET', `/features/${id}`);
+    return response.data;
+  }
+
+  async createFeature(data: CreateFeatureData): Promise<Feature> {
+    const response = await this.request<{ data: Feature }>('POST', '/features', data);
+    return response.data;
+  }
+
+  async updateFeature(id: string, data: UpdateFeatureData): Promise<Feature> {
+    const response = await this.request<{ data: Feature }>('PUT', `/features/${id}`, data);
+    return response.data;
+  }
+
+  async deleteFeature(id: string): Promise<void> {
+    return this.request<void>('DELETE', `/features/${id}`);
+  }
+
+  async getFeatureIssues(id: string): Promise<Issue[]> {
+    const response = await this.request<{ data: Issue[] }>('GET', `/features/${id}/issues`);
+    return response.data;
+  }
+
+  async linkIssueToFeature(featureId: string, issueId: string): Promise<void> {
+    return this.request<void>('POST', `/features/${featureId}/issues`, { issueId });
+  }
+
+  async unlinkIssueFromFeature(featureId: string, issueId: string): Promise<void> {
+    return this.request<void>('DELETE', `/features/${featureId}/issues/${issueId}`);
   }
 
   // Users API

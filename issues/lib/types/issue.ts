@@ -17,6 +17,7 @@ export interface Issue {
   createdAt: Date
   updatedAt: Date
   dueDate?: Date
+  featureId?: ObjectId
 }
 
 export interface CreateIssueData {
@@ -27,6 +28,7 @@ export interface CreateIssueData {
   assigneeId?: string
   tags: string[]
   dueDate?: Date
+  featureId?: string
 }
 
 export interface UpdateIssueData {
@@ -37,6 +39,7 @@ export interface UpdateIssueData {
   assigneeId?: string
   tags?: string[]
   dueDate?: Date
+  featureId?: string | null
 }
 
 export interface IssueFilter {
@@ -45,6 +48,7 @@ export interface IssueFilter {
   priority?: IssuePriority[]
   assigneeId?: string
   reporterId?: string
+  featureId?: string
   tags?: string[]
   search?: string
 }
@@ -54,6 +58,11 @@ export interface IssueWithAssignee extends Issue {
     _id: ObjectId
     name: string
     key: string
+  }
+  feature?: {
+    _id: ObjectId
+    featureNumber: string
+    title: string
   }
   assignee?: {
     _id: ObjectId

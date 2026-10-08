@@ -10,7 +10,7 @@ import { InlineTagsEdit } from '../../components/InlineTagsEdit'
 import { InlineDueDateEdit } from '../../components/InlineDueDateEdit'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDate, getUserInitials, generateAvatarColor } from '@/lib/utils'
-import { Calendar, User, Tag, FolderKanban } from 'lucide-react'
+import { Calendar, User, Tag, FolderKanban, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -45,6 +45,16 @@ export function IssueViewClient({ issue }: IssueViewClientProps) {
                   <FolderKanban className="h-4 w-4" />
                   {issue.project.name}
                 </Link>
+                {issue.feature && (
+                  <Link
+                    href={`/features/${issue.feature._id.toString()}`}
+                    className="inline-flex items-center gap-2 px-3 py-1 bg-secondary border-3 border-black font-bold text-sm hover:translate-x-1 hover:translate-y-1 transition-all"
+                    style={{ boxShadow: '2px 2px 0px 0px rgba(0, 0, 0, 1)' }}
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    {issue.feature.featureNumber}: {issue.feature.title}
+                  </Link>
+                )}
               </div>
 
               {/* Title - Inline Editable */}

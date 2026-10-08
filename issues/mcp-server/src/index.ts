@@ -19,7 +19,11 @@ import type {
   CreateCommentData, 
   UpdateCommentData, 
   IssueFilter, 
-  WikiFilter 
+  WikiFilter,
+  Feature,
+  CreateFeatureData,
+  UpdateFeatureData,
+  FeatureFilter
 } from './types.js';
 
 // Get configuration from environment variables
@@ -57,10 +61,11 @@ server.tool(
     priority: z.array(z.enum(['low', 'medium', 'high', 'critical'])).optional().describe('Filter by priority'),
     assigneeId: z.string().optional().describe('Filter by assignee ID'),
     reporterId: z.string().optional().describe('Filter by reporter ID'),
+    featureId: z.string().optional().describe('Filter by feature (ID or number like CUS-F001)'),
     tags: z.array(z.string()).optional().describe('Filter by tags'),
     search: z.string().optional().describe('Search in title and description')
   },
-  async ({ projectId, status, priority, assigneeId, reporterId, tags, search }) => {
+  async ({ projectId, status, priority, assigneeId, reporterId, featureId, tags, search }) => {
     try {
       const filter: IssueFilter = {};
       if (projectId) filter.projectId = projectId;
@@ -68,6 +73,7 @@ server.tool(
       if (priority) filter.priority = priority;
       if (assigneeId) filter.assigneeId = assigneeId;
       if (reporterId) filter.reporterId = reporterId;
+      if (featureId) filter.featureId = featureId;
       if (tags) filter.tags = tags;
       if (search) filter.search = search;
 
@@ -148,9 +154,10 @@ server.tool(
     priority: z.enum(['low', 'medium', 'high', 'critical']).optional().describe('Priority level (default: medium)'),
     assigneeId: z.string().optional().describe('ID of the user to assign the issue to'),
     tags: z.array(z.string()).optional().describe('Tags to categorize the issue'),
+    featureId: z.string().optional().describe('Feature to link the issue to (ID or number like CUS-F001)'),
     dueDate: z.string().optional().describe('Due date in ISO format')
   },
-  async ({ projectId, title, description, priority, assigneeId, tags, dueDate }) => {
+  async ({ projectId, title, description, priority, assigneeId, tags, featureId, dueDate }) => {
     try {
       const data: CreateIssueData = {
         projectId,
@@ -159,6 +166,7 @@ server.tool(
         priority: priority || 'medium',
         assigneeId,
         tags: tags || [],
+        featureId,
         dueDate: dueDate
       };
 
@@ -197,9 +205,10 @@ server.tool(
     priority: z.enum(['low', 'medium', 'high', 'critical']).optional().describe('New priority for the issue'),
     assigneeId: z.string().optional().describe('New assignee ID'),
     tags: z.array(z.string()).optional().describe('New tags for the issue'),
+    featureId: z.string().nullable().optional().describe('Feature to link to (ID or number like CUS-F001); null unlinks'),
     dueDate: z.string().optional().describe('New due date in ISO format')
   },
-  async ({ issueId, title, description, status, priority, assigneeId, tags, dueDate }) => {
+  async ({ issueId, title, description, status, priority, assigneeId, tags, featureId, dueDate }) => {
     try {
       const data: UpdateIssueData = {};
       if (title !== undefined) data.title = title;
@@ -208,6 +217,7 @@ server.tool(
       if (priority !== undefined) data.priority = priority;
       if (assigneeId !== undefined) data.assigneeId = assigneeId;
       if (tags !== undefined) data.tags = tags;
+      if (featureId !== undefined) data.featureId = featureId;
       if (dueDate !== undefined) data.dueDate = dueDate;
 
       const issue = await client.updateIssue(issueId, data);
@@ -871,6 +881,338 @@ server.resource(
           uri: uri.href,
           mimeType: 'text/plain',
           text: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
+// ============================================================================
+// FEATURES TOOLS
+// ============================================================================
+
+const featureStatusEnum = z.enum(['proposed', 'planned', 'in_progress', 'shipped', 'dropped']);
+const priorityEnum = z.enum(['low', 'medium', 'high', 'critical']);
+
+function formatProgress(feature: Feature): string {
+  const p = feature.progress;
+  if (!p) return 'Unknown';
+  return `${p.done}/${p.total} issues done (${p.percent}%)` +
+    (p.inProgress ? `, ${p.inProgress} in progress` : '') +
+    (p.blocked ? `, ${p.blocked} blocked` : '');
+}
+
+// List Features
+server.tool(
+  'list_features',
+  'List features with optional filtering. Supports filtering by project, status, priority, owner, tags, and search.',
+  {
+    projectId: z.string().optional().describe('Filter by project ID'),
+    status: z.array(featureStatusEnum).optional().describe('Filter by status'),
+    priority: z.array(priorityEnum).optional().describe('Filter by priority'),
+    ownerId: z.string().optional().describe('Filter by owner user ID'),
+    tags: z.array(z.string()).optional().describe('Filter by tags'),
+    search: z.string().optional().describe('Search in title, description and feature number')
+  },
+  async ({ projectId, status, priority, ownerId, tags, search }) => {
+    try {
+      const filter: FeatureFilter = {};
+      if (projectId) filter.projectId = projectId;
+      if (status) filter.status = status;
+      if (priority) filter.priority = priority;
+      if (ownerId) filter.ownerId = ownerId;
+      if (tags) filter.tags = tags;
+      if (search) filter.search = search;
+
+      const features = await client.listFeatures(filter);
+
+      return {
+        content: [{
+          type: 'text',
+          text: `Found ${features.length} features:\n\n${features.map(f =>
+            `${f.featureNumber}: ${f.title}\n` +
+            `  Status: ${f.status} | Priority: ${f.priority}\n` +
+            `  Project: ${f.project?.name || 'Unknown'} (${f.projectId})\n` +
+            `  Owner: ${f.owner?.name || 'Unassigned'}\n` +
+            `  Progress: ${formatProgress(f)}\n` +
+            `  ID: ${f._id}\n`
+          ).join('\n')}`
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error listing features: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
+// Get Feature
+server.tool(
+  'get_feature',
+  'Get detailed information about a feature by ID or number (e.g. CUS-F001), including progress from linked issues',
+  {
+    featureId: z.string().describe('The ID or number (e.g. CUS-F001) of the feature')
+  },
+  async ({ featureId }) => {
+    try {
+      const feature = await client.getFeature(featureId);
+
+      return {
+        content: [{
+          type: 'text',
+          text: `Feature Details:\n\n` +
+            `${feature.featureNumber}: ${feature.title}\n` +
+            `Status: ${feature.status}\n` +
+            `Priority: ${feature.priority}\n` +
+            `Project: ${feature.project?.name || 'Unknown'} (${feature.projectId})\n` +
+            `Owner: ${feature.owner?.name || 'Unassigned'}\n` +
+            `Progress: ${formatProgress(feature)}\n` +
+            `Tags: ${feature.tags?.join(', ') || 'None'}\n` +
+            (feature.wikiSlug ? `Wiki: ${feature.wikiSlug}\n` : '') +
+            (feature.targetDate ? `Target: ${new Date(feature.targetDate).toLocaleDateString()}\n` : '') +
+            (feature.shippedAt ? `Shipped: ${new Date(feature.shippedAt).toLocaleDateString()}\n` : '') +
+            `Created: ${feature.createdAt ? new Date(feature.createdAt).toLocaleDateString() : 'Unknown'}\n\n` +
+            `Description:\n${feature.description}\n\n` +
+            `Acceptance Criteria:\n${feature.acceptanceCriteria || 'None'}\n\n` +
+            `ID: ${feature._id}`
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error getting feature: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
+// Create Feature
+server.tool(
+  'create_feature',
+  'Create a new feature in the specified project. Features are delivered through linked issues.',
+  {
+    projectId: z.string().describe('The ID of the project to create the feature in'),
+    title: z.string().describe('The title of the feature'),
+    description: z.string().describe('Markdown description: the problem and the desired behaviour'),
+    acceptanceCriteria: z.string().optional().describe('Markdown checklist, e.g. "- [ ] user can export CSV"'),
+    status: featureStatusEnum.optional().describe('Initial status (default: proposed)'),
+    priority: priorityEnum.optional().describe('Priority level (default: medium)'),
+    ownerId: z.string().optional().describe('ID of the user accountable for the feature'),
+    wikiSlug: z.string().optional().describe('Slug of a wiki page holding the design/spec'),
+    tags: z.array(z.string()).optional().describe('Tags to categorize the feature'),
+    targetDate: z.string().optional().describe('Target date in ISO format')
+  },
+  async ({ projectId, title, description, acceptanceCriteria, status, priority, ownerId, wikiSlug, tags, targetDate }) => {
+    try {
+      const data: CreateFeatureData = {
+        projectId,
+        title,
+        description,
+        acceptanceCriteria,
+        status,
+        priority,
+        ownerId,
+        wikiSlug,
+        tags: tags || [],
+        targetDate
+      };
+
+      const feature = await client.createFeature(data);
+
+      return {
+        content: [{
+          type: 'text',
+          text: `Feature created successfully!\n\n` +
+            `${feature.featureNumber}: ${feature.title}\n` +
+            `Status: ${feature.status}\n` +
+            `Priority: ${feature.priority}\n` +
+            `ID: ${feature._id}`
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error creating feature: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
+// Update Feature
+server.tool(
+  'update_feature',
+  'Update an existing feature. Setting status to shipped records the ship date and warns if linked issues are still open.',
+  {
+    featureId: z.string().describe('The ID or number (e.g. CUS-F001) of the feature to update'),
+    title: z.string().optional().describe('New title'),
+    description: z.string().optional().describe('New description'),
+    acceptanceCriteria: z.string().optional().describe('New acceptance criteria'),
+    status: featureStatusEnum.optional().describe('New status'),
+    priority: priorityEnum.optional().describe('New priority'),
+    ownerId: z.string().nullable().optional().describe('New owner ID; null clears the owner'),
+    wikiSlug: z.string().optional().describe('Wiki page slug; empty string clears it'),
+    tags: z.array(z.string()).optional().describe('New tags'),
+    targetDate: z.string().nullable().optional().describe('New target date in ISO format; null clears it')
+  },
+  async ({ featureId, title, description, acceptanceCriteria, status, priority, ownerId, wikiSlug, tags, targetDate }) => {
+    try {
+      const data: UpdateFeatureData = {};
+      if (title !== undefined) data.title = title;
+      if (description !== undefined) data.description = description;
+      if (acceptanceCriteria !== undefined) data.acceptanceCriteria = acceptanceCriteria;
+      if (status !== undefined) data.status = status;
+      if (priority !== undefined) data.priority = priority;
+      if (ownerId !== undefined) data.ownerId = ownerId;
+      if (wikiSlug !== undefined) data.wikiSlug = wikiSlug;
+      if (tags !== undefined) data.tags = tags;
+      if (targetDate !== undefined) data.targetDate = targetDate;
+
+      const feature = await client.updateFeature(featureId, data);
+
+      return {
+        content: [{
+          type: 'text',
+          text: `Feature updated successfully!\n\n` +
+            `${feature.featureNumber}: ${feature.title}\n` +
+            `Status: ${feature.status}\n` +
+            `Priority: ${feature.priority}\n` +
+            `Progress: ${formatProgress(feature)}\n` +
+            (feature.warnings?.length ? `Warnings: ${feature.warnings.join('; ')}\n` : '') +
+            `ID: ${feature._id}`
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error updating feature: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
+// Delete Feature
+server.tool(
+  'delete_feature',
+  'Delete a feature. Linked issues are unlinked, not deleted.',
+  {
+    featureId: z.string().describe('The ID or number (e.g. CUS-F001) of the feature to delete')
+  },
+  async ({ featureId }) => {
+    try {
+      await client.deleteFeature(featureId);
+
+      return {
+        content: [{
+          type: 'text',
+          text: `Feature ${featureId} deleted successfully!`
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error deleting feature: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
+// Get Feature Issues
+server.tool(
+  'get_feature_issues',
+  'List the issues linked to a feature',
+  {
+    featureId: z.string().describe('The ID or number (e.g. CUS-F001) of the feature')
+  },
+  async ({ featureId }) => {
+    try {
+      const issues = await client.getFeatureIssues(featureId);
+
+      return {
+        content: [{
+          type: 'text',
+          text: `Found ${issues.length} linked issues:\n\n${issues.map(issue =>
+            `${issue.issueNumber}: ${issue.title}\n` +
+            `  Status: ${issue.status} | Priority: ${issue.priority}\n` +
+            `  Assignee: ${issue.assignee?.name || 'Unassigned'}\n` +
+            `  ID: ${issue._id}\n`
+          ).join('\n')}`
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error getting feature issues: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
+// Link Issue to Feature
+server.tool(
+  'link_issue_to_feature',
+  'Link an existing issue to a feature (an issue belongs to at most one feature; linking moves it)',
+  {
+    featureId: z.string().describe('The ID or number (e.g. CUS-F001) of the feature'),
+    issueId: z.string().describe('The ID or number (e.g. CUS-001) of the issue')
+  },
+  async ({ featureId, issueId }) => {
+    try {
+      await client.linkIssueToFeature(featureId, issueId);
+
+      return {
+        content: [{
+          type: 'text',
+          text: `Issue ${issueId} linked to feature ${featureId}.`
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error linking issue: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
+// Unlink Issue from Feature
+server.tool(
+  'unlink_issue_from_feature',
+  'Remove an issue from a feature',
+  {
+    featureId: z.string().describe('The ID or number (e.g. CUS-F001) of the feature'),
+    issueId: z.string().describe('The ID or number (e.g. CUS-001) of the issue')
+  },
+  async ({ featureId, issueId }) => {
+    try {
+      await client.unlinkIssueFromFeature(featureId, issueId);
+
+      return {
+        content: [{
+          type: 'text',
+          text: `Issue ${issueId} unlinked from feature ${featureId}.`
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error unlinking issue: ${error instanceof Error ? error.message : 'Unknown error'}`
         }]
       };
     }

@@ -17,7 +17,8 @@ import {
   LayoutGrid,
   FolderKanban,
   Key,
-  Server
+  Server,
+  Sparkles
 } from 'lucide-react'
 
 export function Navigation() {
@@ -37,6 +38,7 @@ export function Navigation() {
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Projects', href: '/projects', icon: FolderKanban },
     { name: 'Issues', href: '/issues', icon: FileText },
+    { name: 'Features', href: '/features', icon: Sparkles },
     { name: 'Assets', href: '/assets', icon: Server },
     { name: 'Wiki', href: '/wiki', icon: BookOpen },
     { name: 'Users', href: '/users', icon: Users },
@@ -45,6 +47,7 @@ export function Navigation() {
 
   const quickActions = [
     { name: 'New Issue', href: '/issues/new', icon: Plus },
+    { name: 'New Feature', href: '/features/new', icon: Plus },
     { name: 'New Asset', href: '/assets/new', icon: Plus },
     { name: 'New Wiki', href: '/wiki/new', icon: Plus },
   ]

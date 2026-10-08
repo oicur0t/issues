@@ -1,24 +1,21 @@
 import { NextRequest } from 'next/server'
 import { createApiError, createApiResponse } from '@/lib/api-auth'
 import { handleApiError } from '@/lib/api-errors'
-import { getIssues, createIssue } from '@/app/issues/actions'
+import { getFeatures, createFeature } from '@/app/features/actions'
 import { serializeForApi, parsePaginationParams } from '@/lib/api-utils'
-import { CreateIssueData, IssueFilter } from '@/lib/types'
+import { CreateFeatureData, FeatureFilter } from '@/lib/types'
 
 /**
- * GET /api/v1/issues
- * List all issues with optional filtering
+ * GET /api/v1/features
+ * List all features with optional filtering
+ * Authentication is handled by the action via unified-auth
  */
 export async function GET(request: NextRequest) {
   try {
-
-
-    // Parse query parameters
     const searchParams = request.nextUrl.searchParams
     const { limit, offset } = parsePaginationParams(searchParams)
 
-    // Build filter
-    const filter: IssueFilter = {}
+    const filter: FeatureFilter = {}
 
     if (searchParams.get('projectId')) {
       filter.projectId = searchParams.get('projectId')!
@@ -32,12 +29,8 @@ export async function GET(request: NextRequest) {
       filter.priority = searchParams.get('priority')!.split(',') as any
     }
 
-    if (searchParams.get('assigneeId')) {
-      filter.assigneeId = searchParams.get('assigneeId')!
-    }
-
-    if (searchParams.get('featureId')) {
-      filter.featureId = searchParams.get('featureId')!
+    if (searchParams.get('ownerId')) {
+      filter.ownerId = searchParams.get('ownerId')!
     }
 
     if (searchParams.get('tags')) {
@@ -48,20 +41,16 @@ export async function GET(request: NextRequest) {
       filter.search = searchParams.get('search')!
     }
 
-    // Get issues
-    const issues = await getIssues(filter)
+    const features = await getFeatures(filter)
+    const paginatedFeatures = features.slice(offset, offset + limit)
 
-    // Apply pagination
-    const paginatedIssues = issues.slice(offset, offset + limit)
-
-    // Serialize and return
     return createApiResponse({
-      data: serializeForApi(paginatedIssues),
+      data: serializeForApi(paginatedFeatures),
       pagination: {
         limit,
         offset,
-        total: issues.length,
-        hasMore: offset + limit < issues.length,
+        total: features.length,
+        hasMore: offset + limit < features.length,
       },
     })
   } catch (error) {
@@ -70,41 +59,33 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/v1/issues
- * Create a new issue
+ * POST /api/v1/features
+ * Create a new feature
  */
 export async function POST(request: NextRequest) {
   try {
-
-
-    // Parse body
     const body = await request.json()
 
-    // Validate required fields
     if (!body.projectId || !body.title || !body.description) {
       return createApiError(400, 'Bad request - Missing required fields: projectId, title, description')
     }
 
-    // Create issue data
-    const issueData: CreateIssueData = {
+    const featureData: CreateFeatureData = {
       projectId: body.projectId,
       title: body.title,
       description: body.description,
-      priority: body.priority || 'medium',
-      assigneeId: body.assigneeId,
+      acceptanceCriteria: body.acceptanceCriteria,
+      status: body.status,
+      priority: body.priority,
+      ownerId: body.ownerId,
+      wikiSlug: body.wikiSlug,
       tags: body.tags || [],
-      featureId: body.featureId,
-      dueDate: body.dueDate ? new Date(body.dueDate) : undefined,
+      targetDate: body.targetDate ? new Date(body.targetDate) : undefined,
     }
 
-    // Create the issue
-    const issue = await createIssue(issueData)
+    const feature = await createFeature(featureData)
 
-    // Return created issue
-    return createApiResponse(
-      { data: serializeForApi(issue) },
-      201
-    )
+    return createApiResponse({ data: serializeForApi(feature) }, 201)
   } catch (error) {
     return handleApiError(error, true)
   }

@@ -9,6 +9,7 @@ export interface Project {
   updatedAt: Date
   createdBy: ObjectId
   issueCounter: number // Counter for generating issue numbers
+  featureCounter?: number // Counter for generating feature numbers (absent on older projects)
 }
 
 export interface CreateProjectData {

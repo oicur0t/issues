@@ -61,6 +61,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     if (body.priority !== undefined) updateData.priority = body.priority
     if (body.assigneeId !== undefined) updateData.assigneeId = body.assigneeId
     if (body.tags !== undefined) updateData.tags = body.tags
+    if (body.featureId !== undefined) updateData.featureId = body.featureId
     if (body.dueDate !== undefined) {
       updateData.dueDate = body.dueDate ? new Date(body.dueDate) : undefined
     }

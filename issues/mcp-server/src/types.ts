@@ -17,6 +17,7 @@ export interface Issue {
   createdAt: string;
   updatedAt: string;
   dueDate?: string;
+  featureId?: string;
   project?: {
     _id: string;
     name: string;
@@ -109,6 +110,7 @@ export interface CreateIssueData {
   assigneeId?: string;
   tags?: string[];
   dueDate?: string;
+  featureId?: string;
 }
 
 export interface UpdateIssueData {
@@ -119,6 +121,7 @@ export interface UpdateIssueData {
   assigneeId?: string;
   tags?: string[];
   dueDate?: string;
+  featureId?: string | null; // null unlinks the issue from its feature
 }
 
 export interface CreateProjectData {
@@ -164,6 +167,7 @@ export interface IssueFilter {
   priority?: IssuePriority[];
   assigneeId?: string;
   reporterId?: string;
+  featureId?: string;
   tags?: string[];
   search?: string;
 }
@@ -172,6 +176,81 @@ export interface WikiFilter {
   tags?: string[];
   authorId?: string;
   isPublished?: boolean;
+  search?: string;
+}
+
+export type FeatureStatus = 'proposed' | 'planned' | 'in_progress' | 'shipped' | 'dropped';
+
+export interface FeatureProgress {
+  total: number;
+  done: number;
+  inProgress: number;
+  blocked: number;
+  percent: number;
+}
+
+export interface Feature {
+  _id: string;
+  projectId: string;
+  featureNumber: string;
+  title: string;
+  description: string;
+  acceptanceCriteria: string;
+  status: FeatureStatus;
+  priority: IssuePriority;
+  ownerId?: string;
+  wikiSlug?: string;
+  tags: string[];
+  targetDate?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  shippedAt?: string;
+  project?: {
+    _id: string;
+    name: string;
+    key: string;
+  };
+  owner?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  progress?: FeatureProgress;
+  warnings?: string[];
+}
+
+export interface CreateFeatureData {
+  projectId: string;
+  title: string;
+  description: string;
+  acceptanceCriteria?: string;
+  status?: FeatureStatus;
+  priority?: IssuePriority;
+  ownerId?: string;
+  wikiSlug?: string;
+  tags?: string[];
+  targetDate?: string;
+}
+
+export interface UpdateFeatureData {
+  title?: string;
+  description?: string;
+  acceptanceCriteria?: string;
+  status?: FeatureStatus;
+  priority?: IssuePriority;
+  ownerId?: string | null; // null clears the owner
+  wikiSlug?: string;
+  tags?: string[];
+  targetDate?: string | null; // null clears the date
+}
+
+export interface FeatureFilter {
+  projectId?: string;
+  status?: FeatureStatus[];
+  priority?: IssuePriority[];
+  ownerId?: string;
+  tags?: string[];
   search?: string;
 }
 

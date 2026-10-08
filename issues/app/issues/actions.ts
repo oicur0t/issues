@@ -14,6 +14,7 @@ import {
 import { isEmptyOrWhitespace } from '@/lib/utils'
 import { getNextIssueNumber } from '@/app/projects/actions'
 import { isApiAuthError } from '@/lib/api-errors'
+import { resolveFeatureId } from '@/lib/features'
 
 /**
  * Creates a new issue
@@ -53,6 +54,9 @@ export async function createIssue(data: CreateIssueData): Promise<Issue> {
       throw new Error('Project not found. Please select a valid project.')
     }
 
+    // Resolve optional feature link (ObjectId or "CUS-F001")
+    const featureId = data.featureId ? await resolveFeatureId(data.featureId) : undefined
+
     // Get the next issue number for this project
     console.log('[createIssue] Calling getNextIssueNumber with:', data.projectId)
     const issueNumber = await getNextIssueNumber(data.projectId)
@@ -72,6 +76,7 @@ export async function createIssue(data: CreateIssueData): Promise<Issue> {
       createdAt: new Date(),
       updatedAt: new Date(),
       dueDate: data.dueDate,
+      ...(featureId && { featureId }),
     }
 
     const result = await issuesCollection.insertOne(newIssue as any)
@@ -125,6 +130,10 @@ export async function getIssues(filter: IssueFilter = {}): Promise<IssueWithAssi
 
     if (filter.reporterId) {
       query.reporterId = new ObjectId(filter.reporterId)
+    }
+
+    if (filter.featureId) {
+      query.featureId = await resolveFeatureId(filter.featureId)
     }
 
     if (filter.tags && filter.tags.length > 0) {
@@ -256,9 +265,17 @@ export async function getIssue(id: string): Promise<IssueWithAssignee | null> {
       ? await usersCollection.findOne({ _id: issue.assigneeId })
       : undefined
     const project = await projectsCollection.findOne({ _id: issue.projectId })
+    const feature = issue.featureId
+      ? await (await getCollection('features')).findOne({ _id: issue.featureId })
+      : null
 
     return {
       ...issue,
+      feature: feature ? {
+        _id: feature._id,
+        featureNumber: feature.featureNumber,
+        title: feature.title,
+      } : undefined,
       project: project ? {
         _id: project._id,
         name: project.name,
@@ -347,10 +364,18 @@ export async function updateIssue(id: string, data: UpdateIssueData): Promise<Is
     if (data.dueDate !== undefined) {
       updateData.dueDate = data.dueDate
     }
-    
+
+    // featureId: a value links the issue, null unlinks it
+    let unsetData: any = undefined
+    if (data.featureId === null) {
+      unsetData = { featureId: '' }
+    } else if (data.featureId !== undefined) {
+      updateData.featureId = await resolveFeatureId(data.featureId)
+    }
+
     const result = await issuesCollection.findOneAndUpdate(
       query,
-      { $set: updateData },
+      { $set: updateData, ...(unsetData && { $unset: unsetData }) },
       { returnDocument: 'after' }
     )
 
@@ -361,6 +386,7 @@ export async function updateIssue(id: string, data: UpdateIssueData): Promise<Is
     // Revalidate paths
     revalidatePath('/issues')
     revalidatePath(`/issues/${id}`)
+    revalidatePath('/features')
     revalidatePath('/')
 
     return result as Issue
