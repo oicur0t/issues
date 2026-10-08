@@ -1,6 +1,44 @@
 import { ObjectId } from 'mongodb'
 
-export type AssetStatus = 'active' | 'maintenance' | 'decommissioned'
+// 'removed' is set by the Tailscale sync when a device disappears from the tailnet
+export type AssetStatus = 'active' | 'maintenance' | 'decommissioned' | 'removed'
+
+export type AssetWarningCode =
+  | 'key_expired'
+  | 'key_expiring'
+  | 'offline'
+  | 'update_available'
+  | 'unauthorized'
+
+export interface AssetWarning {
+  code: AssetWarningCode
+  message: string
+}
+
+/**
+ * Owned by the Tailscale sync: overwritten on every run. Never edited by hand.
+ */
+export interface TailscaleInfo {
+  nodeId: string // stable key; hostnames change
+  deviceId?: string // legacy id
+  name: string // MagicDNS FQDN, e.g. wopr.tail6fe843.ts.net
+  hostname: string
+  addresses: string[]
+  os?: string
+  clientVersion?: string
+  updateAvailable: boolean
+  authorized: boolean
+  user?: string
+  tags: string[]
+  isExternal: boolean
+  connectedToControl?: boolean
+  lastSeen: Date | null // null when currently connected
+  created: Date | null
+  expires: Date | null // null when key expiry is disabled
+  keyExpiryDisabled: boolean
+  lastSyncedAt: Date
+  warnings: AssetWarning[]
+}
 
 export interface AssetAccount {
   key: string   // e.g., "SSH User", "Admin Account", "API Key"
@@ -44,6 +82,9 @@ export interface Asset {
   updatedAt: Date
   lastCheckIn?: Date // Last time this asset checked in via phone-home
   systemInfo?: AssetSystemInfo // Detailed system information from phone-home
+  tailscale?: TailscaleInfo // Owned by the Tailscale sync
+  removedAt?: Date // Set when the sync marks the asset removed
+  needsReview?: boolean // Created by the sync; manual fields still empty
 }
 
 export interface CreateAssetData {

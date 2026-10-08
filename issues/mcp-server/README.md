@@ -135,6 +135,8 @@ Claims expire after `CLAIM_TTL_HOURS` (default 4) so abandoned work is re-offere
 - `create_asset` - Create asset
 - `update_asset` - Update asset
 - `delete_asset` - Delete asset (prefer status `decommissioned`)
+- `get_tailscale_sync_status` - Is Tailscale discovery configured, and how did the last sync go
+- `sync_tailscale_assets` - Run the Tailscale discovery now
 
 Store account names only in `accounts`, never passwords or keys.
 

@@ -1063,7 +1063,7 @@ server.tool(
 // ASSETS TOOLS
 // ============================================================================
 
-const assetStatusEnum = z.enum(['active', 'maintenance', 'decommissioned']);
+const assetStatusEnum = z.enum(['active', 'maintenance', 'decommissioned', 'removed']);
 const accountsSchema = z.array(z.object({ key: z.string(), value: z.string() })).optional()
   .describe('Account NAMES only, e.g. {key: "Runs as", value: "root via sudo podman"}. NEVER store passwords, keys or tokens.');
 const assetProjectsSchema = z.array(z.object({ projectId: z.string(), role: z.string() })).optional()
@@ -1078,7 +1078,9 @@ function formatAsset(asset: Asset): string {
     (asset.cost !== undefined ? `  Cost: ${asset.cost}\n` : '') +
     (asset.projects?.length ? `  Projects: ${asset.projects.map(p => `${p.key} (${p.role})`).join(', ')}\n` : '') +
     (asset.tags?.length ? `  Tags: ${asset.tags.join(', ')}\n` : '') +
-    (asset.lastCheckIn ? `  Last check-in: ${new Date(asset.lastCheckIn).toLocaleString()}\n` : '');
+    (asset.lastCheckIn ? `  Last check-in: ${new Date(asset.lastCheckIn).toLocaleString()}\n` : '') +
+    (asset.needsReview ? '  Needs review: discovered via Tailscale, manual fields still empty\n' : '') +
+    (asset.tailscale?.warnings?.length ? `  Warnings: ${asset.tailscale.warnings.map(w => w.message).join('; ')}\n` : '');
 }
 
 // List Assets
@@ -1268,6 +1270,66 @@ server.tool(
         content: [{
           type: 'text',
           text: `Error deleting asset: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
+// Get Tailscale Sync Status
+server.tool(
+  'get_tailscale_sync_status',
+  'Check whether the Tailscale host auto-discovery is configured and how the last sync went (when, what changed, any error).',
+  {},
+  async () => {
+    try {
+      const s = await client.getTailscaleSyncStatus();
+
+      return {
+        content: [{
+          type: 'text',
+          text: `Tailscale sync: ${s.configured ? 'configured' : 'NOT configured (needs TAILSCALE_OAUTH_CLIENT_ID and TAILSCALE_OAUTH_CLIENT_SECRET on the server)'}\n` +
+            (s.configured ? `Automatic interval: ${s.intervalMinutes > 0 ? `${s.intervalMinutes} min` : 'disabled'}\n` : '') +
+            `Last success: ${s.lastSuccessAt ? new Date(s.lastSuccessAt).toLocaleString() : 'never'}\n` +
+            (s.lastError ? `Last error: ${s.lastError}\n` : '') +
+            (s.summary ? `Last result: ${s.summary.devices} devices, ${s.summary.added} added, ${s.summary.adopted} linked, ${s.summary.updated} updated, ${s.summary.reactivated} reactivated, ${s.summary.removed} removed, ${s.summary.withWarnings} with warnings\n` : '')
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error getting Tailscale sync status: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
+// Sync Tailscale Assets
+server.tool(
+  'sync_tailscale_assets',
+  'Run the Tailscale host discovery now: adds new tailnet devices as host assets (flagged needs-review), links existing assets by IP/hostname, ' +
+    'updates Tailscale details and warnings, and marks assets removed when their device disappears. Manual fields are never changed. ' +
+    'A failed run changes nothing. Requires the server to have Tailscale OAuth credentials configured.',
+  {},
+  async () => {
+    try {
+      const s = await client.syncTailscale();
+
+      return {
+        content: [{
+          type: 'text',
+          text: `Tailscale sync complete.\n\n` +
+            `Devices: ${s.devices}\nAdded: ${s.added}\nLinked to existing assets: ${s.adopted}\nUpdated: ${s.updated}\n` +
+            `Reactivated: ${s.reactivated}\nMarked removed: ${s.removed}\nAssets with warnings: ${s.withWarnings}`
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error syncing Tailscale: ${error instanceof Error ? error.message : 'Unknown error'}`
         }]
       };
     }

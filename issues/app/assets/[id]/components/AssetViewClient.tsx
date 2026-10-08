@@ -3,6 +3,7 @@
 import { AssetWithProjects, AssetStatus } from '@/lib/types'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { LocalDate } from '@/app/components/LocalDate'
+import { AssetWarnings } from '../../components/AssetWarnings'
 import { Globe, MapPin, Tag, FolderKanban, User, DollarSign, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 
@@ -23,6 +24,10 @@ const statusConfig: Record<AssetStatus, { color: string; label: string }> = {
     color: 'bg-gray-300',
     label: 'Decommissioned'
   },
+  removed: {
+    color: 'bg-red-300',
+    label: 'Removed'
+  },
 }
 
 export function AssetViewClient({ asset }: AssetViewClientProps) {
@@ -32,6 +37,60 @@ export function AssetViewClient({ asset }: AssetViewClientProps) {
     <div className="grid gap-6 lg:grid-cols-3">
       {/* Main Content */}
       <div className="lg:col-span-2 space-y-6">
+        {asset.tailscale && (
+          <Card className="bg-white">
+            <CardHeader>
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <h2 className="text-xl font-black uppercase">Tailscale</h2>
+                {asset.needsReview && (
+                  <span className="inline-flex items-center px-2 py-0.5 bg-purple-200 border-2 border-black text-xs font-bold">
+                    Needs review: add provider, location and notes
+                  </span>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <AssetWarnings warnings={asset.tailscale.warnings} />
+              <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                <div>
+                  <dt className="font-bold text-muted-foreground">Name</dt>
+                  <dd className="font-mono font-bold break-all">{asset.tailscale.name}</dd>
+                </div>
+                <div>
+                  <dt className="font-bold text-muted-foreground">Addresses</dt>
+                  <dd className="font-mono font-bold">{asset.tailscale.addresses.join(', ')}</dd>
+                </div>
+                <div>
+                  <dt className="font-bold text-muted-foreground">OS / Client</dt>
+                  <dd className="font-bold">
+                    {asset.tailscale.os ?? '-'} / {asset.tailscale.clientVersion ?? '-'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-bold text-muted-foreground">Connection</dt>
+                  <dd className="font-bold">
+                    {asset.tailscale.connectedToControl || !asset.tailscale.lastSeen
+                      ? 'Connected'
+                      : <>Last seen <LocalDate date={asset.tailscale.lastSeen} /></>}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-bold text-muted-foreground">Key expiry</dt>
+                  <dd className="font-bold">
+                    {asset.tailscale.keyExpiryDisabled || !asset.tailscale.expires
+                      ? 'Disabled'
+                      : <LocalDate date={asset.tailscale.expires} />}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-bold text-muted-foreground">Last synced</dt>
+                  <dd className="font-bold"><LocalDate date={asset.tailscale.lastSyncedAt} /></dd>
+                </div>
+              </dl>
+            </CardContent>
+          </Card>
+        )}
+
         <Card className="bg-white">
           <CardHeader>
             <div className="space-y-4">

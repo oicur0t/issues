@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
     "test:mongodb": "node scripts/test-mongodb-auth.js",
     "migrate:projects": "tsx scripts/migrate-to-projects.ts"
   },

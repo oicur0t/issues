@@ -263,7 +263,48 @@ export interface FeatureFilter {
   search?: string;
 }
 
-export type AssetStatus = 'active' | 'maintenance' | 'decommissioned';
+export type AssetStatus = 'active' | 'maintenance' | 'decommissioned' | 'removed';
+
+export interface AssetWarning {
+  code: string;
+  message: string;
+}
+
+export interface TailscaleInfo {
+  nodeId: string;
+  name: string;
+  hostname: string;
+  addresses: string[];
+  os?: string;
+  clientVersion?: string;
+  updateAvailable: boolean;
+  authorized: boolean;
+  connectedToControl?: boolean;
+  lastSeen: string | null;
+  expires: string | null;
+  keyExpiryDisabled: boolean;
+  lastSyncedAt: string;
+  warnings: AssetWarning[];
+}
+
+export interface TailscaleSyncSummary {
+  devices: number;
+  added: number;
+  adopted: number;
+  updated: number;
+  reactivated: number;
+  removed: number;
+  withWarnings: number;
+}
+
+export interface TailscaleSyncStatus {
+  configured: boolean;
+  intervalMinutes: number;
+  lastAttemptAt?: string;
+  lastSuccessAt?: string;
+  lastError?: string | null;
+  summary?: TailscaleSyncSummary;
+}
 
 export interface AssetAccount {
   key: string;
@@ -296,6 +337,9 @@ export interface Asset {
   updatedAt: string;
   lastCheckIn?: string;
   systemInfo?: Record<string, unknown>;
+  tailscale?: TailscaleInfo;
+  removedAt?: string;
+  needsReview?: boolean;
   creator?: {
     _id: string;
     name: string;

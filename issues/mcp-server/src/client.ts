@@ -1,4 +1,4 @@
-import { ClientConfig, Issue, Project, User, WikiPage, Comment, CreateIssueData, UpdateIssueData, CreateProjectData, UpdateProjectData, CreateWikiData, UpdateWikiData, CreateCommentData, UpdateCommentData, IssueFilter, WikiFilter, Feature, CreateFeatureData, UpdateFeatureData, FeatureFilter, Asset, CreateAssetData, UpdateAssetData, AssetFilter } from './types.js';
+import { ClientConfig, Issue, Project, User, WikiPage, Comment, CreateIssueData, UpdateIssueData, CreateProjectData, UpdateProjectData, CreateWikiData, UpdateWikiData, CreateCommentData, UpdateCommentData, IssueFilter, WikiFilter, Feature, CreateFeatureData, UpdateFeatureData, FeatureFilter, Asset, CreateAssetData, UpdateAssetData, AssetFilter, TailscaleSyncStatus, TailscaleSyncSummary } from './types.js';
 
 export class IssueTrackerClient {
   private baseURL: string;
@@ -246,6 +246,16 @@ export class IssueTrackerClient {
 
   async deleteAsset(id: string): Promise<void> {
     return this.request<void>('DELETE', `/assets/${id}`);
+  }
+
+  async getTailscaleSyncStatus(): Promise<TailscaleSyncStatus> {
+    const response = await this.request<{ data: TailscaleSyncStatus }>('GET', '/assets/tailscale-sync');
+    return response.data;
+  }
+
+  async syncTailscale(): Promise<TailscaleSyncSummary> {
+    const response = await this.request<{ data: TailscaleSyncSummary }>('POST', '/assets/tailscale-sync');
+    return response.data;
   }
 
   // Users API

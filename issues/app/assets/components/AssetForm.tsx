@@ -221,6 +221,7 @@ export function AssetForm({ asset, projects = [], onSuccess, onCancel }: AssetFo
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="maintenance">Maintenance</SelectItem>
             <SelectItem value="decommissioned">Decommissioned</SelectItem>
+            <SelectItem value="removed">Removed</SelectItem>
           </SelectContent>
         </Select>
       </div>

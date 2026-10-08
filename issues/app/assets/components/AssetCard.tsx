@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { AssetWithProjects, AssetStatus } from '@/lib/types'
 import { formatDate } from '@/lib/utils'
+import { AssetWarnings } from './AssetWarnings'
 import { Globe, MapPin, Tag, FolderKanban, DollarSign, ExternalLink, User } from 'lucide-react'
 
 interface AssetCardProps {
@@ -22,6 +23,10 @@ const statusConfig: Record<AssetStatus, { color: string; label: string }> = {
   decommissioned: {
     color: 'bg-gray-300',
     label: 'Decommissioned'
+  },
+  removed: {
+    color: 'bg-red-300',
+    label: 'Removed'
   },
 }
 
@@ -97,6 +102,21 @@ export function AssetCard({ asset, className }: AssetCardProps) {
                   </div>
                 )}
               </div>
+
+              {/* Tailscale sync: review flag and warnings */}
+              {(asset.needsReview || (asset.tailscale?.warnings?.length ?? 0) > 0) && (
+                <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                  {asset.needsReview && (
+                    <span
+                      title="Discovered via Tailscale; add provider, location and notes"
+                      className="inline-flex items-center px-2 py-0.5 bg-purple-200 border-2 border-black text-xs font-bold"
+                    >
+                      Needs review
+                    </span>
+                  )}
+                  <AssetWarnings warnings={asset.tailscale?.warnings} max={2} />
+                </div>
+              )}
 
               {/* Cost & Vendor URL */}
               <div className="flex items-center gap-4 mt-2">
