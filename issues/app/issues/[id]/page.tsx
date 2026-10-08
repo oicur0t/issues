@@ -30,7 +30,9 @@ export default async function IssuePage({ params }: IssuePageProps) {
     notFound()
   }
 
-  const comments = await getComments(id)
+  // The URL may carry an issue number (e.g. ISS-014); everything below needs the ObjectId
+  const issueId = issue._id!.toString()
+  const comments = await getComments(issueId)
   const canEdit = session.user.role === 'admin' || session.user.role === 'developer'
   const canDelete = session.user.role === 'admin'
 
@@ -52,7 +54,7 @@ export default async function IssuePage({ params }: IssuePageProps) {
           {canDelete && (
             <form action={async () => {
               'use server'
-              await deleteIssue(id)
+              await deleteIssue(issueId)
               redirect('/issues')
             }}>
               <Button variant="destructive" className="btn-destructive">
@@ -69,7 +71,7 @@ export default async function IssuePage({ params }: IssuePageProps) {
 
       {/* Comments */}
       <IssueComments
-        issueId={id}
+        issueId={issueId}
         initialComments={comments as any}
         currentUserId={session.user.id}
       />

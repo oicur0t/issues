@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { updateIssue } from '../actions'
-import { formatDate } from '@/lib/utils'
+import { LocalDate } from '@/app/components/LocalDate'
 import { Calendar, X } from 'lucide-react'
 
 interface InlineDueDateEditProps {
@@ -45,7 +45,7 @@ export function InlineDueDateEdit({ issueId, currentDueDate, onUpdate }: InlineD
       >
         <Calendar className="h-4 w-4" />
         <span className="font-bold text-sm">
-          {optimisticDueDate ? formatDate(optimisticDueDate) : 'No due date'}
+          {optimisticDueDate ? <LocalDate date={optimisticDueDate} /> : 'No due date'}
         </span>
       </button>
 

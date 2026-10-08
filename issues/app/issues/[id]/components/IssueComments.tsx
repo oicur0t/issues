@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
 import { MessageSquare, Trash2 } from 'lucide-react'
-import { formatDate, getUserInitials, generateAvatarColor } from '@/lib/utils'
+import { getUserInitials, generateAvatarColor } from '@/lib/utils'
+import { LocalDate } from '@/app/components/LocalDate'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
@@ -96,7 +97,7 @@ export function IssueComments({ issueId, initialComments, currentUserId }: Issue
                     <div>
                       <span className="font-bold">{comment.author.name}</span>
                       <span className="text-sm text-muted-foreground ml-2">
-                        {formatDate(comment.createdAt)}
+                        <LocalDate date={comment.createdAt} />
                       </span>
                     </div>
                     {comment.authorId.toString() === currentUserId && (

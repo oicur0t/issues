@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { formatDate } from '@/lib/utils'
+import { LocalDate } from '@/app/components/LocalDate'
 import { Calendar, User, Tag, FolderKanban, BookOpen, Pencil, Plus, X } from 'lucide-react'
 
 // Props arrive JSON-serialized from the server page (ObjectIds/Dates are strings)
@@ -259,14 +259,14 @@ export function FeatureViewClient({ feature, issues, users, canEdit }: FeatureVi
             {feature.targetDate && (
               <div className="flex items-center gap-2 text-sm font-bold">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                Target: {formatDate(new Date(feature.targetDate))}
+                Target: <LocalDate date={feature.targetDate} />
               </div>
             )}
 
             {feature.shippedAt && (
               <div className="flex items-center gap-2 text-sm font-bold">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                Shipped: {formatDate(new Date(feature.shippedAt))}
+                Shipped: <LocalDate date={feature.shippedAt} />
               </div>
             )}
 
@@ -292,8 +292,8 @@ export function FeatureViewClient({ feature, issues, users, canEdit }: FeatureVi
 
             <div className="pt-3 border-t-2 border-black/10 text-xs text-muted-foreground font-bold space-y-1">
               <div>Created by {feature.creator.name}</div>
-              <div>Created {formatDate(new Date(feature.createdAt))}</div>
-              <div>Updated {formatDate(new Date(feature.updatedAt))}</div>
+              <div>Created <LocalDate date={feature.createdAt} /></div>
+              <div>Updated <LocalDate date={feature.updatedAt} /></div>
             </div>
           </CardContent>
         </Card>

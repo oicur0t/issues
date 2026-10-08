@@ -2,7 +2,7 @@
 
 import { AssetWithProjects, AssetStatus } from '@/lib/types'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { formatDate } from '@/lib/utils'
+import { LocalDate } from '@/app/components/LocalDate'
 import { Globe, MapPin, Tag, FolderKanban, User, DollarSign, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 
@@ -242,13 +242,13 @@ export function AssetViewClient({ asset }: AssetViewClientProps) {
             {/* Created Date */}
             <div>
               <div className="text-sm font-bold text-muted-foreground mb-1">Created</div>
-              <div className="font-bold">{formatDate(asset.createdAt)}</div>
+              <div className="font-bold"><LocalDate date={asset.createdAt} /></div>
             </div>
 
             {/* Updated Date */}
             <div>
               <div className="text-sm font-bold text-muted-foreground mb-1">Last Updated</div>
-              <div className="font-bold">{formatDate(asset.updatedAt)}</div>
+              <div className="font-bold"><LocalDate date={asset.updatedAt} /></div>
             </div>
           </CardContent>
         </Card>

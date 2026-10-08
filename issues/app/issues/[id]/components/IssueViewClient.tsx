@@ -10,7 +10,8 @@ import { InlineTagsEdit } from '../../components/InlineTagsEdit'
 import { InlineDueDateEdit } from '../../components/InlineDueDateEdit'
 import { ClaimControl } from '../../components/ClaimControl'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { formatDate, getUserInitials, generateAvatarColor } from '@/lib/utils'
+import { getUserInitials, generateAvatarColor } from '@/lib/utils'
+import { LocalDate } from '@/app/components/LocalDate'
 import { Calendar, User, Tag, FolderKanban, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -68,11 +69,13 @@ export function IssueViewClient({ issue }: IssueViewClientProps) {
               {/* Status & Priority */}
               <div className="flex items-center gap-2">
                 <InlineStatusSelect
+                  key={issue.status}
                   issueId={issue._id!.toString()}
                   currentStatus={issue.status}
                   onUpdate={handleUpdate}
                 />
                 <InlinePrioritySelect
+                  key={issue.priority}
                   issueId={issue._id!.toString()}
                   currentPriority={issue.priority}
                   onUpdate={handleUpdate}
@@ -126,6 +129,7 @@ export function IssueViewClient({ issue }: IssueViewClientProps) {
                 Assignee
               </h4>
               <InlineAssigneeSelect
+                key={issue.assignee?._id.toString() ?? 'unassigned'}
                 issueId={issue._id!.toString()}
                 currentAssignee={issue.assignee}
                 onUpdate={handleUpdate}
@@ -165,14 +169,14 @@ export function IssueViewClient({ issue }: IssueViewClientProps) {
             <div>
               <div className="font-black text-sm uppercase">Created</div>
               <div className="text-sm font-bold text-muted-foreground">
-                {formatDate(issue.createdAt)}
+                <LocalDate date={issue.createdAt} />
               </div>
             </div>
 
             <div>
               <div className="font-black text-sm uppercase">Updated</div>
               <div className="text-sm font-bold text-muted-foreground">
-                {formatDate(issue.updatedAt)}
+                <LocalDate date={issue.updatedAt} />
               </div>
             </div>
 
