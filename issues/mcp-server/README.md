@@ -121,6 +121,13 @@ Add to your Goose configuration:
 - `get_issue_comments` - Get issue comments
 - `add_issue_comment` - Add comment to issue
 
+### Work Claiming (for multiple agents)
+- `get_next_work` - Get (and by default claim) the highest-priority unclaimed issue
+- `claim_issue` - Claim a specific issue; fails if someone else holds it
+- `release_issue` - Release your claim without closing the issue
+
+Claims expire after `CLAIM_TTL_HOURS` (default 4) so abandoned work is re-offered.
+
 ### Feature Management
 - `list_features` - List features with filtering
 - `get_feature` - Get feature details and progress (accepts ID or number like `CUS-F001`)

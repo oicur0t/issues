@@ -15,6 +15,7 @@ import { isEmptyOrWhitespace } from '@/lib/utils'
 import { getNextIssueNumber } from '@/app/projects/actions'
 import { isApiAuthError } from '@/lib/api-errors'
 import { resolveFeatureId } from '@/lib/features'
+import { isClaimExpired } from '@/lib/claims'
 
 /**
  * Creates a new issue
@@ -169,6 +170,9 @@ export async function getIssues(filter: IssueFilter = {}): Promise<IssueWithAssi
       if (issue.assigneeId) {
         userIds.add(issue.assigneeId.toString())
       }
+      if (issue.claimedBy) {
+        userIds.add(issue.claimedBy.toString())
+      }
       if (issue.projectId) {
         projectIds.add(issue.projectId.toString())
       }
@@ -208,9 +212,16 @@ export async function getIssues(filter: IssueFilter = {}): Promise<IssueWithAssi
       }
 
       const feature = issue.featureId ? featureMap.get(issue.featureId.toString()) : undefined
+      const claimer = issue.claimedBy ? userMap.get(issue.claimedBy.toString()) : undefined
 
       return {
         ...issue,
+        claimer: claimer ? {
+          _id: claimer._id,
+          name: claimer.name,
+          email: claimer.email,
+        } : undefined,
+        claimExpired: isClaimExpired(issue),
         feature: feature ? {
           _id: feature._id,
           featureNumber: feature.featureNumber,
@@ -283,9 +294,18 @@ export async function getIssue(id: string): Promise<IssueWithAssignee | null> {
     const feature = issue.featureId
       ? await (await getCollection('features')).findOne({ _id: issue.featureId })
       : null
+    const claimer = issue.claimedBy
+      ? await usersCollection.findOne({ _id: issue.claimedBy })
+      : null
 
     return {
       ...issue,
+      claimer: claimer ? {
+        _id: claimer._id,
+        name: claimer.name,
+        email: claimer.email,
+      } : undefined,
+      claimExpired: isClaimExpired(issue),
       feature: feature ? {
         _id: feature._id,
         featureNumber: feature.featureNumber,
@@ -386,6 +406,11 @@ export async function updateIssue(id: string, data: UpdateIssueData): Promise<Is
       unsetData = { featureId: '' }
     } else if (data.featureId !== undefined) {
       updateData.featureId = await resolveFeatureId(data.featureId)
+    }
+
+    // Closing an issue ends any claim on it
+    if (data.status === 'fixed' || data.status === 'wont_fix') {
+      unsetData = { ...unsetData, claimedBy: '', claimedAt: '' }
     }
 
     const result = await issuesCollection.findOneAndUpdate(

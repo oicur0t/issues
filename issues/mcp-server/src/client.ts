@@ -88,6 +88,34 @@ export class IssueTrackerClient {
     return this.request<void>('DELETE', `/issues/${id}`);
   }
 
+  async claimIssue(id: string): Promise<Issue> {
+    const response = await this.request<{ data: Issue }>('POST', `/issues/${id}/claim`);
+    return response.data;
+  }
+
+  async releaseIssue(id: string): Promise<Issue> {
+    const response = await this.request<{ data: Issue }>('DELETE', `/issues/${id}/claim`);
+    return response.data;
+  }
+
+  // Returns null when no work is available. claim=true atomically claims the issue.
+  async getNextWork(options: { projectId?: string; featureId?: string; claim?: boolean }): Promise<Issue | null> {
+    if (options.claim) {
+      const response = await this.request<{ data: Issue | null }>('POST', '/issues/next', {
+        projectId: options.projectId,
+        featureId: options.featureId,
+      });
+      return response.data;
+    }
+
+    const params = new URLSearchParams();
+    if (options.projectId) params.append('projectId', options.projectId);
+    if (options.featureId) params.append('featureId', options.featureId);
+    const queryString = params.toString();
+    const response = await this.request<{ data: Issue | null }>('GET', `/issues/next${queryString ? `?${queryString}` : ''}`);
+    return response.data;
+  }
+
   async getIssueComments(id: string): Promise<Comment[]> {
     const response = await this.request<{ data: Comment[] }>('GET', `/issues/${id}/comments`);
     return response.data;

@@ -18,6 +18,14 @@ export interface Issue {
   updatedAt: string;
   dueDate?: string;
   featureId?: string;
+  claimedBy?: string;
+  claimedAt?: string;
+  claimExpired?: boolean;
+  claimer?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
   project?: {
     _id: string;
     name: string;

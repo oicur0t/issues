@@ -86,6 +86,7 @@ server.tool(
             `${issue.issueNumber}: ${issue.title}\n` +
             `  Status: ${issue.status} | Priority: ${issue.priority}\n` +
             `  Project: ${issue.project?.name || 'Unknown'} (${issue.projectId})\n` +
+            (issue.claimer ? `  Claimed by: ${issue.claimer.name}${issue.claimExpired ? ' (expired)' : ''}\n` : '') +
             `  Tags: ${issue.tags?.join(', ') || 'None'}\n` +
             `  Created: ${issue.createdAt ? new Date(issue.createdAt).toLocaleDateString() : 'Unknown'}\n` +
             `  ID: ${issue._id}\n`
@@ -124,6 +125,7 @@ server.tool(
             `Project: ${issue.project?.name || 'Unknown'} (${issue.projectId})\n` +
             `Assignee: ${issue.assignee?.name || 'Unassigned'}\n` +
             `Reporter: ${issue.reporter?.name || 'Unknown'}\n` +
+            (issue.claimer ? `Claimed by: ${issue.claimer.name}${issue.claimExpired ? ' (claim expired)' : ''}\n` : '') +
             `Tags: ${issue.tags?.join(', ') || 'None'}\n` +
             `Created: ${issue.createdAt ? new Date(issue.createdAt).toLocaleDateString() : 'Unknown'}\n` +
             `Updated: ${issue.updatedAt ? new Date(issue.updatedAt).toLocaleDateString() : 'Unknown'}\n` +
@@ -881,6 +883,122 @@ server.resource(
           uri: uri.href,
           mimeType: 'text/plain',
           text: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
+// ============================================================================
+// WORK CLAIMING TOOLS
+// ============================================================================
+
+function formatClaimedIssue(issue: Issue): string {
+  return `${issue.issueNumber}: ${issue.title}\n` +
+    `Status: ${issue.status} | Priority: ${issue.priority}\n` +
+    `Project: ${issue.project?.name || 'Unknown'} (${issue.projectId})\n` +
+    (issue.featureId ? `Feature: ${issue.featureId}\n` : '') +
+    `Tags: ${issue.tags?.join(', ') || 'None'}\n\n` +
+    `Description:\n${issue.description}\n\n` +
+    `ID: ${issue._id}`;
+}
+
+// Get Next Work
+server.tool(
+  'get_next_work',
+  'Get the next issue to work on: highest priority, oldest first, from the backlog (or abandoned in-progress work whose claim expired). ' +
+    'By default it CLAIMS the issue for you (moves it to in_progress, assigns it to you if unassigned) so no other agent picks it up. ' +
+    'Set claim=false to just peek. Claims expire after a few hours; call claim_issue on the same issue to refresh. ' +
+    'Returns a message instead of an issue when nothing is available.',
+  {
+    projectId: z.string().optional().describe('Only consider issues in this project'),
+    featureId: z.string().optional().describe('Only consider issues linked to this feature (ID or number like CUS-F001)'),
+    claim: z.boolean().optional().describe('Claim the issue for yourself (default: true). Use false to only look.')
+  },
+  async ({ projectId, featureId, claim }) => {
+    try {
+      const shouldClaim = claim !== false;
+      const issue = await client.getNextWork({ projectId, featureId, claim: shouldClaim });
+
+      if (!issue) {
+        return {
+          content: [{
+            type: 'text',
+            text: 'No work available: no unclaimed backlog issues match.'
+          }]
+        };
+      }
+
+      return {
+        content: [{
+          type: 'text',
+          text: `${shouldClaim ? 'Claimed' : 'Next up (not claimed)'}:\n\n${formatClaimedIssue(issue)}`
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error getting next work: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
+// Claim Issue
+server.tool(
+  'claim_issue',
+  'Claim a specific issue so other agents do not work on it. Fails if someone else holds a live claim. ' +
+    'Moves a backlog issue to in_progress and assigns it to you if unassigned. ' +
+    'Claiming an issue you already hold refreshes the claim, which expires after a few hours.',
+  {
+    issueId: z.string().describe('The ID or number (e.g. CUS-001) of the issue to claim')
+  },
+  async ({ issueId }) => {
+    try {
+      const issue = await client.claimIssue(issueId);
+
+      return {
+        content: [{
+          type: 'text',
+          text: `Claimed:\n\n${formatClaimedIssue(issue)}`
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error claiming issue: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
+// Release Issue
+server.tool(
+  'release_issue',
+  'Release your claim on an issue without closing it (e.g. you are blocked or stopping). ' +
+    'Status and assignee are left unchanged. Closing an issue (fixed / wont_fix) releases the claim automatically.',
+  {
+    issueId: z.string().describe('The ID or number (e.g. CUS-001) of the issue to release')
+  },
+  async ({ issueId }) => {
+    try {
+      const issue = await client.releaseIssue(issueId);
+
+      return {
+        content: [{
+          type: 'text',
+          text: `Released ${issue.issueNumber}: ${issue.title} (status: ${issue.status})`
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error releasing issue: ${error instanceof Error ? error.message : 'Unknown error'}`
         }]
       };
     }

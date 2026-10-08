@@ -8,6 +8,7 @@ import { InlineDescriptionEdit } from '../../components/InlineDescriptionEdit'
 import { InlineAssigneeSelect } from '../../components/InlineAssigneeSelect'
 import { InlineTagsEdit } from '../../components/InlineTagsEdit'
 import { InlineDueDateEdit } from '../../components/InlineDueDateEdit'
+import { ClaimControl } from '../../components/ClaimControl'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDate, getUserInitials, generateAvatarColor } from '@/lib/utils'
 import { Calendar, User, Tag, FolderKanban, Sparkles } from 'lucide-react'
@@ -77,6 +78,9 @@ export function IssueViewClient({ issue }: IssueViewClientProps) {
                   onUpdate={handleUpdate}
                 />
               </div>
+
+              {/* Who is working on it */}
+              <ClaimControl issue={issue} />
             </div>
           </CardHeader>
 

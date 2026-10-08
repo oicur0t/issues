@@ -18,6 +18,8 @@ export interface Issue {
   updatedAt: Date
   dueDate?: Date
   featureId?: ObjectId
+  claimedBy?: ObjectId // user currently working on this issue (see claim-actions)
+  claimedAt?: Date // claims expire after CLAIM_TTL_HOURS
 }
 
 export interface CreateIssueData {
@@ -64,6 +66,12 @@ export interface IssueWithAssignee extends Issue {
     featureNumber: string
     title: string
   }
+  claimer?: {
+    _id: ObjectId
+    name: string
+    email: string
+  }
+  claimExpired?: boolean // claim exists but has passed its TTL
   assignee?: {
     _id: ObjectId
     name: string

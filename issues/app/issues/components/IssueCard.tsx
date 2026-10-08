@@ -5,7 +5,7 @@ import { IssueWithAssignee } from '@/lib/types'
 import { InlineStatusSelect } from './InlineStatusSelect'
 import { InlinePrioritySelect } from './InlinePrioritySelect'
 import { formatDate, getUserInitials, generateAvatarColor } from '@/lib/utils'
-import { Calendar, User, Tag, FolderKanban, Sparkles } from 'lucide-react'
+import { Calendar, User, Tag, FolderKanban, Sparkles, Lock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface IssueCardProps {
@@ -51,6 +51,16 @@ export function IssueCard({ issue, className }: IssueCardProps) {
                   <Sparkles className="h-3 w-3" />
                   {issue.feature.featureNumber}
                 </Link>
+              )}
+              {issue.claimer && !issue.claimExpired && (
+                <span
+                  title={`Claimed by ${issue.claimer.name}`}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-200 border-2 border-black text-xs font-bold"
+                  style={{ boxShadow: '1px 1px 0px 0px rgba(0, 0, 0, 1)' }}
+                >
+                  <Lock className="h-3 w-3" />
+                  {issue.claimer.name}
+                </span>
               )}
             </div>
 
