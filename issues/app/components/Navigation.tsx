@@ -145,6 +145,9 @@ export function Navigation() {
           <LogOut className="h-4 w-4 mr-2" />
           Logout
         </button>
+        <div className="mt-3 text-center text-xs font-bold text-white/50" title="Build number (bumped on each GitHub sync)">
+          Build {process.env.NEXT_PUBLIC_BUILD_NUMBER}
+        </div>
       </div>
     </aside>
   )

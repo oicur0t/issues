@@ -1,5 +1,19 @@
+const fs = require('fs')
+const path = require('path')
+
+// Build number lives in BUILD_NUMBER and is bumped by scripts/sync.sh
+let buildNumber = 'dev'
+try {
+  buildNumber = fs.readFileSync(path.join(__dirname, 'BUILD_NUMBER'), 'utf8').trim() || 'dev'
+} catch {
+  // Missing file (e.g. odd build context): fall back to "dev"
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: {
+    NEXT_PUBLIC_BUILD_NUMBER: buildNumber,
+  },
   experimental: {
     serverActions: {
       allowedOrigins: ['localhost:3000'],
