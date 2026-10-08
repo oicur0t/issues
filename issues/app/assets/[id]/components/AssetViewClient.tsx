@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { AssetWithProjects, AssetStatus } from '@/lib/types'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { AssetForm } from '../../components/AssetForm'
+import { updateAsset } from '../../actions'
 import { LocalDate } from '@/app/components/LocalDate'
 import { AssetWarnings } from '../../components/AssetWarnings'
 import { Globe, MapPin, Tag, FolderKanban, User, DollarSign, ExternalLink, Pencil, ListPlus } from 'lucide-react'
@@ -36,7 +38,16 @@ const statusConfig: Record<AssetStatus, { color: string; label: string }> = {
 }
 
 export function AssetViewClient({ asset, projects, canEdit }: Readonly<AssetViewClientProps>) {
+  const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
+  const [isPending, startTransition] = useTransition()
+
+  const markReviewed = () => {
+    startTransition(async () => {
+      await updateAsset(asset._id!.toString(), { needsReview: false })
+      router.refresh()
+    })
+  }
   const statusCfg = statusConfig[asset.status]
 
   if (isEditing) {
@@ -89,9 +100,16 @@ export function AssetViewClient({ asset, projects, canEdit }: Readonly<AssetView
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <h2 className="text-xl font-black uppercase">Tailscale <span className="text-xs font-bold normal-case text-muted-foreground">(read-only, managed by the sync)</span></h2>
                 {asset.needsReview && (
-                  <span className="inline-flex items-center px-2 py-0.5 bg-purple-200 border-2 border-black text-xs font-bold">
-                    Needs review: add provider, location and notes
-                  </span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center px-2 py-0.5 bg-purple-200 border-2 border-black text-xs font-bold">
+                      Needs review: add provider, location and notes
+                    </span>
+                    {canEdit && (
+                      <Button variant="outline" size="sm" className="btn-outline" onClick={markReviewed} disabled={isPending}>
+                        {isPending ? 'Saving...' : 'Mark reviewed'}
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
             </CardHeader>

@@ -122,6 +122,7 @@ export interface UpdateAssetData {
   description?: string
   projects?: Array<{ projectId: string; role: string }>
   tags?: string[]
+  needsReview?: boolean // any update clears the review flag unless this is explicitly true
 }
 
 export interface AssetFilter {

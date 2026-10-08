@@ -356,6 +356,14 @@ export async function updateAsset(id: string, data: UpdateAssetData): Promise<As
       updateData.status = data.status
     }
 
+    // Touching an asset counts as reviewing it: clear the Tailscale "needs review" flag
+    // (pass needsReview: true to deliberately set it again)
+    if (data.needsReview === true) {
+      updateData.needsReview = true
+    } else {
+      unsetData = { ...unsetData, needsReview: '' }
+    }
+
     const result = await assetsCollection.findOneAndUpdate(
       { _id: new ObjectId(id) },
       { $set: updateData, ...(unsetData && { $unset: unsetData }) },
