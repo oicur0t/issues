@@ -176,6 +176,7 @@ export interface IssueFilter {
   assigneeId?: string;
   reporterId?: string;
   featureId?: string;
+  mine?: boolean; // open issues assigned to, or claimed by, the caller
   tags?: string[];
   search?: string;
 }
@@ -259,6 +260,90 @@ export interface FeatureFilter {
   priority?: IssuePriority[];
   ownerId?: string;
   tags?: string[];
+  search?: string;
+}
+
+export type AssetStatus = 'active' | 'maintenance' | 'decommissioned';
+
+export interface AssetAccount {
+  key: string;
+  value: string;
+}
+
+export interface Asset {
+  _id: string;
+  name: string;
+  hostname?: string;
+  ipAddresses: string[];
+  type: string;
+  status: AssetStatus;
+  os?: string;
+  provider?: string;
+  location?: string;
+  cost?: number;
+  vendorUrl?: string;
+  accounts: AssetAccount[];
+  description?: string;
+  projects: Array<{
+    _id: string;
+    name: string;
+    key: string;
+    role: string;
+  }>;
+  tags: string[];
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  lastCheckIn?: string;
+  systemInfo?: Record<string, unknown>;
+  creator?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+}
+
+export interface CreateAssetData {
+  name: string;
+  hostname?: string;
+  ipAddresses?: string[];
+  type: string;
+  status: AssetStatus;
+  os?: string;
+  provider?: string;
+  location?: string;
+  cost?: number;
+  vendorUrl?: string;
+  accounts?: AssetAccount[];
+  description?: string;
+  projects?: Array<{ projectId: string; role: string }>;
+  tags?: string[];
+}
+
+export interface UpdateAssetData {
+  name?: string;
+  hostname?: string;
+  ipAddresses?: string[];
+  type?: string;
+  status?: AssetStatus;
+  os?: string;
+  provider?: string;
+  location?: string;
+  cost?: number;
+  vendorUrl?: string;
+  accounts?: AssetAccount[];
+  description?: string;
+  projects?: Array<{ projectId: string; role: string }>;
+  tags?: string[];
+}
+
+export interface AssetFilter {
+  type?: string[];
+  status?: AssetStatus[];
+  projectId?: string;
+  tags?: string[];
+  provider?: string;
+  location?: string;
   search?: string;
 }
 

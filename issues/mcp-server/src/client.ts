@@ -1,4 +1,4 @@
-import { ClientConfig, Issue, Project, User, WikiPage, Comment, CreateIssueData, UpdateIssueData, CreateProjectData, UpdateProjectData, CreateWikiData, UpdateWikiData, CreateCommentData, UpdateCommentData, IssueFilter, WikiFilter, Feature, CreateFeatureData, UpdateFeatureData, FeatureFilter } from './types.js';
+import { ClientConfig, Issue, Project, User, WikiPage, Comment, CreateIssueData, UpdateIssueData, CreateProjectData, UpdateProjectData, CreateWikiData, UpdateWikiData, CreateCommentData, UpdateCommentData, IssueFilter, WikiFilter, Feature, CreateFeatureData, UpdateFeatureData, FeatureFilter, Asset, CreateAssetData, UpdateAssetData, AssetFilter } from './types.js';
 
 export class IssueTrackerClient {
   private baseURL: string;
@@ -58,6 +58,7 @@ export class IssueTrackerClient {
       if (filter.assigneeId) params.append('assigneeId', filter.assigneeId);
       if (filter.reporterId) params.append('reporterId', filter.reporterId);
       if (filter.featureId) params.append('featureId', filter.featureId);
+      if (filter.mine) params.append('mine', 'true');
       if (filter.tags) params.append('tags', filter.tags.join(','));
       if (filter.search) params.append('search', filter.search);
 
@@ -203,6 +204,48 @@ export class IssueTrackerClient {
 
   async unlinkIssueFromFeature(featureId: string, issueId: string): Promise<void> {
     return this.request<void>('DELETE', `/features/${featureId}/issues/${issueId}`);
+  }
+
+  // Assets API
+  async listAssets(filter?: AssetFilter): Promise<Asset[]> {
+    let path = '/assets';
+
+    if (filter) {
+      const params = new URLSearchParams();
+
+      if (filter.type) params.append('type', filter.type.join(','));
+      if (filter.status) params.append('status', filter.status.join(','));
+      if (filter.projectId) params.append('projectId', filter.projectId);
+      if (filter.tags) params.append('tags', filter.tags.join(','));
+      if (filter.provider) params.append('provider', filter.provider);
+      if (filter.location) params.append('location', filter.location);
+      if (filter.search) params.append('search', filter.search);
+
+      const queryString = params.toString();
+      if (queryString) path += `?${queryString}`;
+    }
+
+    const response = await this.request<{ data: Asset[] }>('GET', path);
+    return response.data;
+  }
+
+  async getAsset(id: string): Promise<Asset> {
+    const response = await this.request<{ data: Asset }>('GET', `/assets/${id}`);
+    return response.data;
+  }
+
+  async createAsset(data: CreateAssetData): Promise<Asset> {
+    const response = await this.request<{ data: Asset }>('POST', '/assets', data);
+    return response.data;
+  }
+
+  async updateAsset(id: string, data: UpdateAssetData): Promise<Asset> {
+    const response = await this.request<{ data: Asset }>('PUT', `/assets/${id}`, data);
+    return response.data;
+  }
+
+  async deleteAsset(id: string): Promise<void> {
+    return this.request<void>('DELETE', `/assets/${id}`);
   }
 
   // Users API

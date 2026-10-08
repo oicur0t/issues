@@ -51,6 +51,7 @@ export interface IssueFilter {
   assigneeId?: string
   reporterId?: string
   featureId?: string
+  mine?: boolean // open issues assigned to, or claimed by, the caller
   tags?: string[]
   search?: string
 }

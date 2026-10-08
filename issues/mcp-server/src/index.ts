@@ -23,7 +23,11 @@ import type {
   Feature,
   CreateFeatureData,
   UpdateFeatureData,
-  FeatureFilter
+  FeatureFilter,
+  Asset,
+  CreateAssetData,
+  UpdateAssetData,
+  AssetFilter
 } from './types.js';
 
 // Get configuration from environment variables
@@ -999,6 +1003,271 @@ server.tool(
         content: [{
           type: 'text',
           text: `Error releasing issue: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
+// Get My Work
+server.tool(
+  'get_my_work',
+  'List the open issues that are assigned to you or that you have claimed, so you can resume after a restart. ' +
+    'Closed issues (fixed / wont_fix) are excluded. Shows whether each claim is still live or has expired; ' +
+    'call claim_issue on an issue to refresh a live claim or re-take an expired one.',
+  {
+    projectId: z.string().optional().describe('Only issues in this project'),
+    featureId: z.string().optional().describe('Only issues linked to this feature (ID or number like CUS-F001)')
+  },
+  async ({ projectId, featureId }) => {
+    try {
+      const filter: IssueFilter = { mine: true };
+      if (projectId) filter.projectId = projectId;
+      if (featureId) filter.featureId = featureId;
+
+      const issues = await client.listIssues(filter);
+
+      if (issues.length === 0) {
+        return {
+          content: [{
+            type: 'text',
+            text: 'You have no open assigned or claimed issues.'
+          }]
+        };
+      }
+
+      return {
+        content: [{
+          type: 'text',
+          text: `You have ${issues.length} open issues:\n\n${issues.map(issue =>
+            `${issue.issueNumber}: ${issue.title}\n` +
+            `  Status: ${issue.status} | Priority: ${issue.priority}\n` +
+            `  Claim: ${issue.claimer ? (issue.claimExpired ? 'expired' : 'live') : 'none'}\n` +
+            (issue.featureId ? `  Feature: ${issue.featureId}\n` : '') +
+            `  ID: ${issue._id}\n`
+          ).join('\n')}`
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error getting your work: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
+// ============================================================================
+// ASSETS TOOLS
+// ============================================================================
+
+const assetStatusEnum = z.enum(['active', 'maintenance', 'decommissioned']);
+const accountsSchema = z.array(z.object({ key: z.string(), value: z.string() })).optional()
+  .describe('Account NAMES only, e.g. {key: "Runs as", value: "root via sudo podman"}. NEVER store passwords, keys or tokens.');
+const assetProjectsSchema = z.array(z.object({ projectId: z.string(), role: z.string() })).optional()
+  .describe('Projects this asset serves, each with the role it plays (e.g. "Production server")');
+
+function formatAsset(asset: Asset): string {
+  return `${asset.name} (${asset.type}, ${asset.status})\n` +
+    (asset.hostname ? `  Hostname: ${asset.hostname}\n` : '') +
+    (asset.ipAddresses?.length ? `  IPs: ${asset.ipAddresses.join(', ')}\n` : '') +
+    (asset.os ? `  OS: ${asset.os}\n` : '') +
+    (asset.provider || asset.location ? `  Provider/Location: ${asset.provider || '-'} / ${asset.location || '-'}\n` : '') +
+    (asset.cost !== undefined ? `  Cost: ${asset.cost}\n` : '') +
+    (asset.projects?.length ? `  Projects: ${asset.projects.map(p => `${p.key} (${p.role})`).join(', ')}\n` : '') +
+    (asset.tags?.length ? `  Tags: ${asset.tags.join(', ')}\n` : '') +
+    (asset.lastCheckIn ? `  Last check-in: ${new Date(asset.lastCheckIn).toLocaleString()}\n` : '');
+}
+
+// List Assets
+server.tool(
+  'list_assets',
+  'List infrastructure assets (hosts, containers, pods, integrations) with optional filtering by type, status, project, tags, provider, location, or search.',
+  {
+    type: z.array(z.string()).optional().describe('Filter by type, e.g. ["host", "container"]'),
+    status: z.array(assetStatusEnum).optional().describe('Filter by status'),
+    projectId: z.string().optional().describe('Filter by project ID'),
+    tags: z.array(z.string()).optional().describe('Filter by tags'),
+    provider: z.string().optional().describe('Filter by provider, e.g. "AWS"'),
+    location: z.string().optional().describe('Filter by location'),
+    search: z.string().optional().describe('Search name, hostname, description and IPs')
+  },
+  async ({ type, status, projectId, tags, provider, location, search }) => {
+    try {
+      const filter: AssetFilter = {};
+      if (type) filter.type = type;
+      if (status) filter.status = status;
+      if (projectId) filter.projectId = projectId;
+      if (tags) filter.tags = tags;
+      if (provider) filter.provider = provider;
+      if (location) filter.location = location;
+      if (search) filter.search = search;
+
+      const assets = await client.listAssets(filter);
+
+      return {
+        content: [{
+          type: 'text',
+          text: `Found ${assets.length} assets:\n\n${assets.map(a => `${formatAsset(a)}  ID: ${a._id}\n`).join('\n')}`
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error listing assets: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
+// Get Asset
+server.tool(
+  'get_asset',
+  'Get full details of an asset by ID, including accounts, projects and any phone-home system info',
+  {
+    assetId: z.string().describe('The ID of the asset')
+  },
+  async ({ assetId }) => {
+    try {
+      const asset = await client.getAsset(assetId);
+
+      return {
+        content: [{
+          type: 'text',
+          text: `Asset Details:\n\n${formatAsset(asset)}` +
+            (asset.vendorUrl ? `  Vendor URL: ${asset.vendorUrl}\n` : '') +
+            (asset.accounts?.length ? `  Accounts: ${asset.accounts.map(a => `${a.key}: ${a.value}`).join('; ')}\n` : '') +
+            (asset.description ? `\nDescription:\n${asset.description}\n` : '') +
+            (asset.systemInfo ? `\nSystem info:\n${JSON.stringify(asset.systemInfo, null, 2)}\n` : '') +
+            `\nID: ${asset._id}`
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error getting asset: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
+// Create Asset
+server.tool(
+  'create_asset',
+  'Create a new infrastructure asset. Type is free-form (host, container, pod, integration, ...).',
+  {
+    name: z.string().describe('Asset name, e.g. "production-web-01"'),
+    type: z.string().describe('Asset type, e.g. "host", "container", "pod", "integration"'),
+    status: assetStatusEnum.describe('Asset status'),
+    hostname: z.string().optional().describe('Hostname'),
+    ipAddresses: z.array(z.string()).optional().describe('IP addresses'),
+    os: z.string().optional().describe('Operating system'),
+    provider: z.string().optional().describe('Provider, e.g. "AWS", "On-Prem"'),
+    location: z.string().optional().describe('Location, e.g. "us-east-1"'),
+    cost: z.number().optional().describe('Monthly/annual cost'),
+    vendorUrl: z.string().optional().describe('Link to the vendor/provider portal'),
+    accounts: accountsSchema,
+    description: z.string().optional().describe('Notes about the asset'),
+    projects: assetProjectsSchema,
+    tags: z.array(z.string()).optional().describe('Tags')
+  },
+  async (args) => {
+    try {
+      const data: CreateAssetData = { ...args };
+      const asset = await client.createAsset(data);
+
+      return {
+        content: [{
+          type: 'text',
+          text: `Asset created successfully!\n\n${formatAsset(asset)}  ID: ${asset._id}`
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error creating asset: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
+// Update Asset
+server.tool(
+  'update_asset',
+  'Update an existing asset. Only the fields you pass change; arrays (ipAddresses, accounts, projects, tags) are replaced wholesale.',
+  {
+    assetId: z.string().describe('The ID of the asset to update'),
+    name: z.string().optional().describe('New name'),
+    type: z.string().optional().describe('New type'),
+    status: assetStatusEnum.optional().describe('New status'),
+    hostname: z.string().optional().describe('New hostname'),
+    ipAddresses: z.array(z.string()).optional().describe('Replacement list of IP addresses'),
+    os: z.string().optional().describe('New operating system'),
+    provider: z.string().optional().describe('New provider'),
+    location: z.string().optional().describe('New location'),
+    cost: z.number().optional().describe('New cost'),
+    vendorUrl: z.string().optional().describe('New vendor URL'),
+    accounts: accountsSchema,
+    description: z.string().optional().describe('New notes'),
+    projects: assetProjectsSchema,
+    tags: z.array(z.string()).optional().describe('Replacement list of tags')
+  },
+  async ({ assetId, ...fields }) => {
+    try {
+      const data: UpdateAssetData = {};
+      for (const [key, value] of Object.entries(fields)) {
+        if (value !== undefined) (data as Record<string, unknown>)[key] = value;
+      }
+
+      const asset = await client.updateAsset(assetId, data);
+
+      return {
+        content: [{
+          type: 'text',
+          text: `Asset updated successfully!\n\n${formatAsset(asset)}  ID: ${asset._id}`
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error updating asset: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
+// Delete Asset
+server.tool(
+  'delete_asset',
+  'Delete an asset permanently. Prefer update_asset with status "decommissioned" to keep history.',
+  {
+    assetId: z.string().describe('The ID of the asset to delete')
+  },
+  async ({ assetId }) => {
+    try {
+      await client.deleteAsset(assetId);
+
+      return {
+        content: [{
+          type: 'text',
+          text: `Asset ${assetId} deleted successfully!`
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error deleting asset: ${error instanceof Error ? error.message : 'Unknown error'}`
         }]
       };
     }

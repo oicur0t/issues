@@ -125,8 +125,18 @@ Add to your Goose configuration:
 - `get_next_work` - Get (and by default claim) the highest-priority unclaimed issue
 - `claim_issue` - Claim a specific issue; fails if someone else holds it
 - `release_issue` - Release your claim without closing the issue
+- `get_my_work` - List your open assigned or claimed issues (resume after a restart)
 
 Claims expire after `CLAIM_TTL_HOURS` (default 4) so abandoned work is re-offered.
+
+### Asset Management
+- `list_assets` - List assets with filtering
+- `get_asset` - Get asset details
+- `create_asset` - Create asset
+- `update_asset` - Update asset
+- `delete_asset` - Delete asset (prefer status `decommissioned`)
+
+Store account names only in `accounts`, never passwords or keys.
 
 ### Feature Management
 - `list_features` - List features with filtering

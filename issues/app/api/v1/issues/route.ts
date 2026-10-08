@@ -40,6 +40,10 @@ export async function GET(request: NextRequest) {
       filter.featureId = searchParams.get('featureId')!
     }
 
+    if (searchParams.get('mine') === 'true') {
+      filter.mine = true
+    }
+
     if (searchParams.get('tags')) {
       filter.tags = searchParams.get('tags')!.split(',')
     }

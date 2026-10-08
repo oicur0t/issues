@@ -137,6 +137,13 @@ export async function getIssues(filter: IssueFilter = {}): Promise<IssueWithAssi
       query.featureId = await resolveFeatureId(filter.featureId)
     }
 
+    if (filter.mine) {
+      query.$and = [
+        { $or: [{ assigneeId: user._id }, { claimedBy: user._id }] },
+        { status: { $nin: ['fixed', 'wont_fix'] } },
+      ]
+    }
+
     if (filter.tags && filter.tags.length > 0) {
       query.tags = { $in: filter.tags }
     }
