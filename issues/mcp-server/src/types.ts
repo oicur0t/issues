@@ -126,7 +126,7 @@ export interface UpdateIssueData {
   description?: string;
   status?: IssueStatus;
   priority?: IssuePriority;
-  assigneeId?: string;
+  assigneeId?: string | null; // null unassigns
   tags?: string[];
   dueDate?: string;
   featureId?: string | null; // null unlinks the issue from its feature

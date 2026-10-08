@@ -205,7 +205,7 @@ server.tool(
     description: z.string().optional().describe('New description for the issue'),
     status: z.enum(['backlog', 'in_progress', 'blocked', 'fixed', 'wont_fix']).optional().describe('New status for the issue'),
     priority: z.enum(['low', 'medium', 'high', 'critical']).optional().describe('New priority for the issue'),
-    assigneeId: z.string().optional().describe('New assignee ID'),
+    assigneeId: z.string().nullable().optional().describe('New assignee ID; null unassigns'),
     tags: z.array(z.string()).optional().describe('New tags for the issue'),
     featureId: z.string().nullable().optional().describe('Feature to link to (ID or number like CUS-F001); null unlinks'),
     dueDate: z.string().optional().describe('New due date in ISO format')

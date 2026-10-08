@@ -388,8 +388,10 @@ export async function updateIssue(id: string, data: UpdateIssueData): Promise<Is
       updateData.priority = data.priority
     }
     
-    if (data.assigneeId !== undefined) {
-      updateData.assigneeId = data.assigneeId ? new ObjectId(data.assigneeId) : undefined
+    // assigneeId: a value assigns, null (or empty) unassigns
+    const unassign = data.assigneeId === null || data.assigneeId === ''
+    if (data.assigneeId && !unassign) {
+      updateData.assigneeId = new ObjectId(data.assigneeId)
     }
     
     if (data.tags !== undefined) {
@@ -406,6 +408,10 @@ export async function updateIssue(id: string, data: UpdateIssueData): Promise<Is
       unsetData = { featureId: '' }
     } else if (data.featureId !== undefined) {
       updateData.featureId = await resolveFeatureId(data.featureId)
+    }
+
+    if (unassign) {
+      unsetData = { ...unsetData, assigneeId: '' }
     }
 
     // Closing an issue ends any claim on it

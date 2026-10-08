@@ -39,7 +39,7 @@ export function InlineAssigneeSelect({ issueId, currentAssignee, onUpdate }: Inl
 
     startTransition(async () => {
       try {
-        await updateIssue(issueId, { assigneeId: userId || undefined })
+        await updateIssue(issueId, { assigneeId: userId || null })
         onUpdate?.()
       } catch (error) {
         console.error('Failed to update assignee:', error)

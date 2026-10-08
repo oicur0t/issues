@@ -38,7 +38,7 @@ export interface UpdateIssueData {
   description?: string
   status?: IssueStatus
   priority?: IssuePriority
-  assigneeId?: string
+  assigneeId?: string | null // null unassigns
   tags?: string[]
   dueDate?: Date
   featureId?: string | null
