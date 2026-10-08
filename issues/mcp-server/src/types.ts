@@ -324,6 +324,7 @@ export interface Asset {
   cost?: number;
   vendorUrl?: string;
   accounts: AssetAccount[];
+  customFields?: AssetAccount[];
   description?: string;
   projects: Array<{
     _id: string;
@@ -359,6 +360,7 @@ export interface CreateAssetData {
   cost?: number;
   vendorUrl?: string;
   accounts?: AssetAccount[];
+  customFields?: AssetAccount[];
   description?: string;
   projects?: Array<{ projectId: string; role: string }>;
   tags?: string[];
@@ -373,9 +375,10 @@ export interface UpdateAssetData {
   os?: string;
   provider?: string;
   location?: string;
-  cost?: number;
+  cost?: number | null; // null clears it
   vendorUrl?: string;
   accounts?: AssetAccount[];
+  customFields?: AssetAccount[];
   description?: string;
   projects?: Array<{ projectId: string; role: string }>;
   tags?: string[];

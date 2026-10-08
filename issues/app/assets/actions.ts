@@ -57,6 +57,7 @@ export async function createAsset(data: CreateAssetData): Promise<Asset> {
       cost: data.cost,
       vendorUrl: data.vendorUrl?.trim(),
       accounts: data.accounts || [],
+      customFields: data.customFields || [],
       description: data.description?.trim(),
       projects,
       tags: data.tags || [],
@@ -311,7 +312,11 @@ export async function updateAsset(id: string, data: UpdateAssetData): Promise<As
       updateData.location = data.location?.trim()
     }
 
-    if (data.cost !== undefined) {
+    // cost: a number sets it, null clears it
+    let unsetData: any = undefined
+    if (data.cost === null) {
+      unsetData = { cost: '' }
+    } else if (data.cost !== undefined) {
       updateData.cost = data.cost
     }
 
@@ -321,6 +326,10 @@ export async function updateAsset(id: string, data: UpdateAssetData): Promise<As
 
     if (data.accounts !== undefined) {
       updateData.accounts = data.accounts
+    }
+
+    if (data.customFields !== undefined) {
+      updateData.customFields = data.customFields
     }
 
     if (data.description !== undefined) {
@@ -349,7 +358,7 @@ export async function updateAsset(id: string, data: UpdateAssetData): Promise<As
 
     const result = await assetsCollection.findOneAndUpdate(
       { _id: new ObjectId(id) },
-      { $set: updateData },
+      { $set: updateData, ...(unsetData && { $unset: unsetData }) },
       { returnDocument: 'after' }
     )
 

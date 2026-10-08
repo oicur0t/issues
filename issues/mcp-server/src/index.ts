@@ -1066,6 +1066,8 @@ server.tool(
 const assetStatusEnum = z.enum(['active', 'maintenance', 'decommissioned', 'removed']);
 const accountsSchema = z.array(z.object({ key: z.string(), value: z.string() })).optional()
   .describe('Account NAMES only, e.g. {key: "Runs as", value: "root via sudo podman"}. NEVER store passwords, keys or tokens.');
+const customFieldsSchema = z.array(z.object({ key: z.string(), value: z.string() })).optional()
+  .describe('Free-form key/value fields, e.g. {key: "Serial number", value: "C02XYZ"}. NEVER store passwords, keys or tokens.');
 const assetProjectsSchema = z.array(z.object({ projectId: z.string(), role: z.string() })).optional()
   .describe('Projects this asset serves, each with the role it plays (e.g. "Production server")');
 
@@ -1143,6 +1145,7 @@ server.tool(
           text: `Asset Details:\n\n${formatAsset(asset)}` +
             (asset.vendorUrl ? `  Vendor URL: ${asset.vendorUrl}\n` : '') +
             (asset.accounts?.length ? `  Accounts: ${asset.accounts.map(a => `${a.key}: ${a.value}`).join('; ')}\n` : '') +
+            (asset.customFields?.length ? `  Custom fields: ${asset.customFields.map(f => `${f.key}: ${f.value}`).join('; ')}\n` : '') +
             (asset.description ? `\nDescription:\n${asset.description}\n` : '') +
             (asset.systemInfo ? `\nSystem info:\n${JSON.stringify(asset.systemInfo, null, 2)}\n` : '') +
             `\nID: ${asset._id}`
@@ -1165,7 +1168,7 @@ server.tool(
   'Create a new infrastructure asset. Type is free-form (host, container, pod, integration, ...).',
   {
     name: z.string().describe('Asset name, e.g. "production-web-01"'),
-    type: z.string().describe('Asset type, e.g. "host", "container", "pod", "integration"'),
+    type: z.string().describe('Asset type. The Assets page groups by: "physical server", "virtual server", "desktop", "laptop", "device" (in that order); other values like "container" or "pod" also work'),
     status: assetStatusEnum.describe('Asset status'),
     hostname: z.string().optional().describe('Hostname'),
     ipAddresses: z.array(z.string()).optional().describe('IP addresses'),
@@ -1175,6 +1178,7 @@ server.tool(
     cost: z.number().optional().describe('Monthly/annual cost'),
     vendorUrl: z.string().optional().describe('Link to the vendor/provider portal'),
     accounts: accountsSchema,
+    customFields: customFieldsSchema,
     description: z.string().optional().describe('Notes about the asset'),
     projects: assetProjectsSchema,
     tags: z.array(z.string()).optional().describe('Tags')
@@ -1215,9 +1219,10 @@ server.tool(
     os: z.string().optional().describe('New operating system'),
     provider: z.string().optional().describe('New provider'),
     location: z.string().optional().describe('New location'),
-    cost: z.number().optional().describe('New cost'),
+    cost: z.number().nullable().optional().describe('New cost; null clears it'),
     vendorUrl: z.string().optional().describe('New vendor URL'),
     accounts: accountsSchema,
+    customFields: customFieldsSchema,
     description: z.string().optional().describe('New notes'),
     projects: assetProjectsSchema,
     tags: z.array(z.string()).optional().describe('Replacement list of tags')

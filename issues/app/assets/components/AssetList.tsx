@@ -6,6 +6,7 @@ import { AssetWithProjects, AssetFilter } from '@/lib/types'
 import { getAssets } from '../actions'
 import { AssetCard } from './AssetCard'
 import { TailscaleSyncPanel } from './TailscaleSyncPanel'
+import { groupAssetsByType } from '@/lib/asset-types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -175,9 +176,19 @@ export function AssetList() {
           )}
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {assets.map((asset) => (
-            <AssetCard key={asset._id!.toString()} asset={asset} />
+        <div className="space-y-8">
+          {groupAssetsByType(assets).map((group) => (
+            <section key={group.key} className="space-y-3">
+              <h2 className="flex items-baseline gap-3 text-2xl font-black uppercase border-b-4 border-black pb-1">
+                {group.label}
+                <span className="text-base font-bold text-muted-foreground">{group.assets.length}</span>
+              </h2>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {group.assets.map((asset) => (
+                  <AssetCard key={asset._id!.toString()} asset={asset} />
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       )}

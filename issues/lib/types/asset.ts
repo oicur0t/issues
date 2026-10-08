@@ -82,6 +82,7 @@ export interface Asset {
   updatedAt: Date
   lastCheckIn?: Date // Last time this asset checked in via phone-home
   systemInfo?: AssetSystemInfo // Detailed system information from phone-home
+  customFields?: AssetAccount[] // Free-form key/value fields added by hand
   tailscale?: TailscaleInfo // Owned by the Tailscale sync
   removedAt?: Date // Set when the sync marks the asset removed
   needsReview?: boolean // Created by the sync; manual fields still empty
@@ -99,6 +100,7 @@ export interface CreateAssetData {
   cost?: number
   vendorUrl?: string
   accounts: AssetAccount[]
+  customFields?: AssetAccount[]
   description?: string
   projects: Array<{ projectId: string; role: string }> // String IDs from form
   tags: string[]
@@ -113,9 +115,10 @@ export interface UpdateAssetData {
   os?: string
   provider?: string
   location?: string
-  cost?: number
+  cost?: number | null // null clears it
   vendorUrl?: string
   accounts?: AssetAccount[]
+  customFields?: AssetAccount[]
   description?: string
   projects?: Array<{ projectId: string; role: string }>
   tags?: string[]

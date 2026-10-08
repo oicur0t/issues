@@ -55,6 +55,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     if (body.cost !== undefined) updateData.cost = body.cost
     if (body.vendorUrl !== undefined) updateData.vendorUrl = body.vendorUrl
     if (body.accounts !== undefined) updateData.accounts = body.accounts
+    if (body.customFields !== undefined) updateData.customFields = body.customFields
     if (body.description !== undefined) updateData.description = body.description
     if (body.projects !== undefined) updateData.projects = body.projects
     if (body.tags !== undefined) updateData.tags = body.tags

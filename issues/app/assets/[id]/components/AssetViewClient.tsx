@@ -1,14 +1,19 @@
 'use client'
 
+import { useState } from 'react'
 import { AssetWithProjects, AssetStatus } from '@/lib/types'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { AssetForm } from '../../components/AssetForm'
 import { LocalDate } from '@/app/components/LocalDate'
 import { AssetWarnings } from '../../components/AssetWarnings'
-import { Globe, MapPin, Tag, FolderKanban, User, DollarSign, ExternalLink } from 'lucide-react'
+import { Globe, MapPin, Tag, FolderKanban, User, DollarSign, ExternalLink, Pencil, ListPlus } from 'lucide-react'
 import Link from 'next/link'
 
 interface AssetViewClientProps {
   asset: AssetWithProjects
+  projects: Array<{ _id: string; name: string; key: string }>
+  canEdit: boolean
 }
 
 const statusConfig: Record<AssetStatus, { color: string; label: string }> = {
@@ -30,8 +35,49 @@ const statusConfig: Record<AssetStatus, { color: string; label: string }> = {
   },
 }
 
-export function AssetViewClient({ asset }: AssetViewClientProps) {
+export function AssetViewClient({ asset, projects, canEdit }: Readonly<AssetViewClientProps>) {
+  const [isEditing, setIsEditing] = useState(false)
   const statusCfg = statusConfig[asset.status]
+
+  if (isEditing) {
+    return (
+      <Card className="bg-white">
+        <CardHeader>
+          <h2 className="text-2xl font-black">Edit {asset.name}</h2>
+          {asset.tailscale && (
+            <p className="text-sm text-muted-foreground font-bold">
+              Tailscale details are managed by the sync and are not editable here. Everything below is yours to change.
+            </p>
+          )}
+        </CardHeader>
+        <CardContent>
+          <AssetForm
+            asset={{
+              _id: asset._id!.toString(),
+              name: asset.name,
+              hostname: asset.hostname,
+              ipAddresses: asset.ipAddresses ?? [],
+              type: asset.type,
+              status: asset.status,
+              os: asset.os,
+              provider: asset.provider,
+              location: asset.location,
+              cost: asset.cost,
+              vendorUrl: asset.vendorUrl,
+              accounts: asset.accounts ?? [],
+              customFields: asset.customFields ?? [],
+              description: asset.description,
+              projects: asset.projects ?? [],
+              tags: asset.tags ?? [],
+            }}
+            projects={projects}
+            onSuccess={() => setIsEditing(false)}
+            onCancel={() => setIsEditing(false)}
+          />
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <div className="grid gap-6 lg:grid-cols-3">
@@ -41,7 +87,7 @@ export function AssetViewClient({ asset }: AssetViewClientProps) {
           <Card className="bg-white">
             <CardHeader>
               <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="text-xl font-black uppercase">Tailscale</h2>
+                <h2 className="text-xl font-black uppercase">Tailscale <span className="text-xs font-bold normal-case text-muted-foreground">(read-only, managed by the sync)</span></h2>
                 {asset.needsReview && (
                   <span className="inline-flex items-center px-2 py-0.5 bg-purple-200 border-2 border-black text-xs font-bold">
                     Needs review: add provider, location and notes
@@ -111,7 +157,15 @@ export function AssetViewClient({ asset }: AssetViewClientProps) {
               </div>
 
               {/* Asset Name */}
-              <h1 className="text-4xl font-black">{asset.name}</h1>
+              <div className="flex items-start justify-between gap-4">
+                <h1 className="text-4xl font-black">{asset.name}</h1>
+                {canEdit && (
+                  <Button variant="outline" className="btn-outline shrink-0" onClick={() => setIsEditing(true)}>
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                )}
+              </div>
 
               {/* Hostname */}
               {asset.hostname && (
@@ -163,6 +217,28 @@ export function AssetViewClient({ asset }: AssetViewClientProps) {
                     >
                       <span className="font-bold text-sm text-muted-foreground">{account.key}:</span>
                       <code className="font-mono font-bold text-sm">{account.value}</code>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Custom Fields */}
+            {asset.customFields && asset.customFields.length > 0 && (
+              <div>
+                <h3 className="font-black text-lg mb-3 uppercase flex items-center">
+                  <ListPlus className="h-5 w-5 mr-2" />
+                  Custom Fields
+                </h3>
+                <div className="space-y-2">
+                  {asset.customFields.map((field, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 p-3 bg-muted border-2 border-black"
+                      style={{ boxShadow: '2px 2px 0px 0px rgba(0, 0, 0, 1)' }}
+                    >
+                      <span className="font-bold text-sm text-muted-foreground">{field.key}:</span>
+                      <span className="font-bold text-sm">{field.value}</span>
                     </div>
                   ))}
                 </div>

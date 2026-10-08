@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, X } from 'lucide-react'
+import { ASSET_CATEGORIES } from '@/lib/asset-types'
 
 interface AssetFormProps {
   asset?: {
@@ -25,6 +26,7 @@ interface AssetFormProps {
     cost?: number
     vendorUrl?: string
     accounts: AssetAccount[]
+    customFields?: AssetAccount[]
     description?: string
     projects: Array<{ _id?: any; key?: string; name?: string; role: string }>
     tags: string[]
@@ -55,6 +57,7 @@ export function AssetForm({ asset, projects = [], onSuccess, onCancel }: AssetFo
     cost: asset?.cost?.toString() || '',
     vendorUrl: asset?.vendorUrl || '',
     accounts: asset?.accounts || [] as AssetAccount[],
+    customFields: asset?.customFields || [] as AssetAccount[],
     description: asset?.description || '',
     projects: asset?.projects?.map(p => ({
       projectId: p._id?.toString() || '',
@@ -91,6 +94,29 @@ export function AssetForm({ asset, projects = [], onSuccess, onCancel }: AssetFo
     }))
   }
 
+  const addCustomField = () => {
+    setFormData(prev => ({
+      ...prev,
+      customFields: [...prev.customFields, { key: '', value: '' }]
+    }))
+  }
+
+  const updateCustomField = (index: number, field: 'key' | 'value', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      customFields: prev.customFields.map((f, i) =>
+        i === index ? { ...f, [field]: value } : f
+      )
+    }))
+  }
+
+  const removeCustomField = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      customFields: prev.customFields.filter((_, i) => i !== index)
+    }))
+  }
+
   const toggleProject = (projectId: string) => {
     setFormData(prev => {
       const exists = prev.projects.find(p => p.projectId === projectId)
@@ -123,22 +149,27 @@ export function AssetForm({ asset, projects = [], onSuccess, onCancel }: AssetFo
     setError(null)
 
     try {
+      // On edit, empty values are sent as '' / null so they actually clear the stored value
+      // (undefined is dropped on the way to the server and would mean "unchanged").
+      const clearable = (value: string) => (asset ? value.trim() : value.trim() || undefined)
+
       const submitData: any = {
         name: formData.name.trim(),
-        hostname: formData.hostname.trim() || undefined,
+        hostname: clearable(formData.hostname),
         ipAddresses: formData.ipAddresses
           .split(',')
           .map(ip => ip.trim())
           .filter(ip => ip.length > 0),
         type: formData.type.trim(),
         status: formData.status,
-        os: formData.os.trim() || undefined,
-        provider: formData.provider.trim() || undefined,
-        location: formData.location.trim() || undefined,
-        cost: formData.cost ? parseFloat(formData.cost) : undefined,
-        vendorUrl: formData.vendorUrl.trim() || undefined,
+        os: clearable(formData.os),
+        provider: clearable(formData.provider),
+        location: clearable(formData.location),
+        cost: formData.cost ? parseFloat(formData.cost) : (asset ? null : undefined),
+        vendorUrl: clearable(formData.vendorUrl),
         accounts: formData.accounts.filter(acc => acc.key.trim() && acc.value.trim()),
-        description: formData.description.trim() || undefined,
+        customFields: formData.customFields.filter(f => f.key.trim() && f.value.trim()),
+        description: clearable(formData.description),
         projects: formData.projects
           .filter(p => p.projectId && p.role.trim())
           .map(p => ({ projectId: p.projectId, role: p.role.trim() })),
@@ -157,7 +188,9 @@ export function AssetForm({ asset, projects = [], onSuccess, onCancel }: AssetFo
       }
 
       onSuccess?.()
-      router.push('/assets')
+      if (!asset) {
+        router.push('/assets')
+      }
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
@@ -196,12 +229,18 @@ export function AssetForm({ asset, projects = [], onSuccess, onCancel }: AssetFo
             type="text"
             value={formData.type}
             onChange={(e) => handleInputChange('type', e.target.value)}
-            placeholder="e.g., host, container, pod, integration"
+            placeholder="e.g., physical server, laptop, container"
+            list="asset-type-options"
             required
             disabled={isSubmitting}
           />
+          <datalist id="asset-type-options">
+            {[...ASSET_CATEGORIES, 'container', 'pod', 'integration'].map(t => (
+              <option key={t} value={t} />
+            ))}
+          </datalist>
           <p className="text-xs text-muted-foreground mt-1">
-            Flexible type - enter any value
+            The Assets page groups by type: physical server, virtual server, desktop, laptop, device. Any other value works too.
           </p>
         </div>
       </div>
@@ -382,6 +421,67 @@ export function AssetForm({ asset, projects = [], onSuccess, onCancel }: AssetFo
         </div>
         <p className="text-xs text-muted-foreground mt-1">
           Add accounts with access to this asset (SSH users, admin accounts, etc.)
+        </p>
+      </div>
+
+      {/* Custom Fields */}
+      <div className="form-group">
+        <div className="flex items-center justify-between mb-2">
+          <Label className="font-bold">Custom Fields</Label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addCustomField}
+            disabled={isSubmitting}
+            className="btn-sm"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Add Field
+          </Button>
+        </div>
+        <div className="border-2 border-black rounded-md p-4 space-y-3">
+          {formData.customFields.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-2">
+              No custom fields. Click "Add Field" to record anything else worth knowing.
+            </p>
+          ) : (
+            formData.customFields.map((field, index) => (
+              <div key={index} className="flex gap-2 items-start">
+                <div className="flex-1">
+                  <Input
+                    type="text"
+                    value={field.key}
+                    onChange={(e) => updateCustomField(index, 'key', e.target.value)}
+                    placeholder="e.g., Serial number, Rack, Warranty ends"
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div className="flex-1">
+                  <Input
+                    type="text"
+                    value={field.value}
+                    onChange={(e) => updateCustomField(index, 'value', e.target.value)}
+                    placeholder="Value"
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => removeCustomField(index)}
+                  disabled={isSubmitting}
+                  className="btn-sm"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          Free-form key/value fields. Do not store passwords, keys or tokens here.
         </p>
       </div>
 

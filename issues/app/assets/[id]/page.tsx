@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { getCurrentSession } from '@/lib/auth'
 import { getAsset, deleteAsset } from '@/app/assets/actions'
+import { getProjects } from '@/app/projects/actions'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Trash2, Edit } from 'lucide-react'
 import Link from 'next/link'
@@ -27,6 +28,11 @@ export default async function AssetPage({ params }: AssetPageProps) {
   if (!asset) {
     notFound()
   }
+
+  const projects = await getProjects()
+  const serializedProjects = projects
+    .filter(p => p._id)
+    .map(p => ({ _id: p._id!.toString(), name: p.name, key: p.key }))
 
   const canEdit = session.user.role === 'admin' || session.user.role === 'developer'
   const canDelete = session.user.role === 'admin'
@@ -62,7 +68,7 @@ export default async function AssetPage({ params }: AssetPageProps) {
       </div>
 
       {/* Asset Details */}
-      <AssetViewClient asset={asset} />
+      <AssetViewClient asset={asset} projects={serializedProjects} canEdit={canEdit} />
     </div>
   )
 }

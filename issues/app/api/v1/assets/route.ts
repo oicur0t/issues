@@ -103,6 +103,7 @@ export async function POST(request: NextRequest) {
       cost: body.cost,
       vendorUrl: body.vendorUrl,
       accounts: body.accounts || [],
+      customFields: body.customFields || [],
       description: body.description,
       projects: body.projects || [],
       tags: body.tags || [],
