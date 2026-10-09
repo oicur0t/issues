@@ -4,6 +4,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { IssueTrackerClient } from './client.js';
+import { formatAsset } from './format.js';
 import type { 
   Issue, 
   Project, 
@@ -1070,20 +1071,6 @@ const customFieldsSchema = z.array(z.object({ key: z.string(), value: z.string()
   .describe('Free-form key/value fields, e.g. {key: "Serial number", value: "C02XYZ"}. NEVER store passwords, keys or tokens.');
 const assetProjectsSchema = z.array(z.object({ projectId: z.string(), role: z.string() })).optional()
   .describe('Projects this asset serves, each with the role it plays (e.g. "Production server")');
-
-function formatAsset(asset: Asset): string {
-  return `${asset.name} (${asset.type}, ${asset.status})\n` +
-    (asset.hostname ? `  Hostname: ${asset.hostname}\n` : '') +
-    (asset.ipAddresses?.length ? `  IPs: ${asset.ipAddresses.join(', ')}\n` : '') +
-    (asset.os ? `  OS: ${asset.os}\n` : '') +
-    (asset.provider || asset.location ? `  Provider/Location: ${asset.provider || '-'} / ${asset.location || '-'}\n` : '') +
-    (asset.cost !== undefined ? `  Cost: ${asset.cost}\n` : '') +
-    (asset.projects?.length ? `  Projects: ${asset.projects.map(p => `${p.key ?? p.name ?? 'unknown project'} (${p.role})`).join(', ')}\n` : '') +
-    (asset.tags?.length ? `  Tags: ${asset.tags.join(', ')}\n` : '') +
-    (asset.lastCheckIn ? `  Last check-in: ${new Date(asset.lastCheckIn).toLocaleString()}\n` : '') +
-    (asset.needsReview ? '  Needs review: discovered via Tailscale, manual fields still empty\n' : '') +
-    (asset.tailscale?.warnings?.length ? `  Warnings: ${asset.tailscale.warnings.map(w => w.message).join('; ')}\n` : '');
-}
 
 // List Assets
 server.tool(
