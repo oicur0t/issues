@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { createApiError, createApiResponse } from '@/lib/api-auth'
 import { handleApiError } from '@/lib/api-errors'
-import { getAssets, createAsset } from '@/app/assets/actions'
+import { getAssets, getAsset, createAsset } from '@/app/assets/actions'
 import { serializeForApi, parsePaginationParams } from '@/lib/api-utils'
 import { CreateAssetData, AssetFilter } from '@/lib/types'
 
@@ -110,11 +110,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the asset
-    const asset = await createAsset(assetData)
+    const created = await createAsset(assetData)
+
+    // Return the same populated shape as GET (project keys and names, creator), not the raw document
+    const asset = await getAsset(created._id!.toString())
 
     // Return created asset
     return createApiResponse(
-      { data: serializeForApi(asset) },
+      { data: serializeForApi(asset ?? created) },
       201
     )
   } catch (error) {

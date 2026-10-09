@@ -1078,7 +1078,7 @@ function formatAsset(asset: Asset): string {
     (asset.os ? `  OS: ${asset.os}\n` : '') +
     (asset.provider || asset.location ? `  Provider/Location: ${asset.provider || '-'} / ${asset.location || '-'}\n` : '') +
     (asset.cost !== undefined ? `  Cost: ${asset.cost}\n` : '') +
-    (asset.projects?.length ? `  Projects: ${asset.projects.map(p => `${p.key} (${p.role})`).join(', ')}\n` : '') +
+    (asset.projects?.length ? `  Projects: ${asset.projects.map(p => `${p.key ?? p.name ?? 'unknown project'} (${p.role})`).join(', ')}\n` : '') +
     (asset.tags?.length ? `  Tags: ${asset.tags.join(', ')}\n` : '') +
     (asset.lastCheckIn ? `  Last check-in: ${new Date(asset.lastCheckIn).toLocaleString()}\n` : '') +
     (asset.needsReview ? '  Needs review: discovered via Tailscale, manual fields still empty\n' : '') +

@@ -61,9 +61,12 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     if (body.projects !== undefined) updateData.projects = body.projects
     if (body.tags !== undefined) updateData.tags = body.tags
 
-    const asset = await updateAsset(id, updateData)
+    const updated = await updateAsset(id, updateData)
 
-    return createApiResponse({ data: serializeForApi(asset) })
+    // Return the same populated shape as GET (project keys and names, creator), not the raw document
+    const asset = await getAsset(updated._id!.toString())
+
+    return createApiResponse({ data: serializeForApi(asset ?? updated) })
   } catch (error) {
     return handleApiError(error, true)
   }
