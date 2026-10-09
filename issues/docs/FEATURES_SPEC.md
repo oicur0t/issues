@@ -151,6 +151,14 @@ After Features, do these in order — all small and aimed at multi-agent coordin
 
 Skip for now: cycles, custom fields, voting, hill charts.
 
+## 8a. Status of the stretch ideas (as of build 9)
+
+Done: **agent claim lock** (`claim_issue`, `release_issue`, expiry via `CLAIM_TTL_HOURS`), **`get_next_work`**, and **`get_my_work`** (a `mine=true` filter on the issues list). See "Working with AI agents" in the README.
+
+Not done yet: activity log, PM status updates, issue relations, triage state, feature comments (deferred from v1), feature scoring, releases/changelog. Also tracked in the README roadmap.
+
+Related modules built on the same conventions: **Assets** (grouping, editing, custom fields) and the **Tailscale discovery** (docs/TAILSCALE_SYNC.md).
+
 ## 9. Open questions
 
 1. Feature number format: `CUS-F001` (proposed, distinct from issue `CUS-001`) vs. sharing the issue counter?

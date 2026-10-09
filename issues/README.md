@@ -8,10 +8,30 @@ A production-ready internal issue tracking system built with Next.js 15, TypeScr
 - ✅ Full CRUD operations for issues
 - ✅ Issue listing with filtering and search
 - ✅ Individual issue view with edit capability
-- ✅ Status workflow (Open, In Progress, Blocked, Closed)
+- ✅ Status workflow (Backlog, In Progress, Blocked, Fixed, Won't Fix)
 - ✅ Priority levels (Low, Medium, High, Critical)
-- ✅ Issue assignment to team members
+- ✅ Issue assignment to team members (and unassigning)
 - ✅ Tag-based categorization
+- ✅ Project-scoped readable numbers (`ISS-014`); URLs work with the number or the id
+- ✅ **Claim lock** for multiple agents: claim an issue so nobody else works on it (see [Working with AI agents](#-working-with-ai-agents))
+- ✅ Optional link to a feature
+
+### Feature Tracking
+- ✅ Project-scoped features with readable IDs (e.g. `CUS-F001`)
+- ✅ Status workflow (Proposed, Planned, In Progress, Shipped, Dropped)
+- ✅ Link issues to a feature; progress is calculated from linked issues
+- ✅ Acceptance criteria, owner, target date, optional wiki spec link
+- ✅ REST API (`/api/v1/features`) and MCP tools (`list_features`, `create_feature`, ...)
+- Run `node scripts/add-feature-indexes.js` once to create the recommended indexes
+
+### Asset Tracking
+- ✅ Infrastructure inventory: hosts, servers, desktops, laptops, devices, containers, integrations
+- ✅ Assets page **grouped by type**: physical server, virtual server, desktop, laptop, device, then other types, then unclassified
+- ✅ Editable in the UI (Edit button on the asset page): provider, location, cost, notes, tags, accounts (names only), project links with roles, and free-form **custom fields**
+- ✅ **Tailscale discovery**: pulls tailnet devices into Assets, links existing assets instead of duplicating them, and warns about expired keys, offline hosts and updates. The Tailscale details are read-only. See [docs/TAILSCALE_SYNC.md](docs/TAILSCALE_SYNC.md)
+- ✅ New hosts found by the sync show **Needs review** until you save them or press **Mark reviewed**
+- ✅ Phone-home endpoint for hosts to check in (`POST /api/v1/assets/phone-home`)
+- ✅ REST API (`/api/v1/assets`) and MCP tools (`list_assets`, `update_asset`, `sync_tailscale_assets`, ...)
 
 ### Wiki/Documentation Repository
 - ✅ Store and display markdown files
@@ -74,14 +94,24 @@ A production-ready internal issue tracking system built with Next.js 15, TypeScr
    NEXTAUTH_URL=http://localhost:3000
    ```
 
-3. **Start with Docker Compose**
+3. **Check for port conflicts before starting**
+
+   The default host port is `3000`. If another service is already using it (e.g. Perplexica), update the port mapping in `docker-compose.yml` before starting:
+   ```yaml
+   ports:
+     - "3002:3000"  # change 3002 to any free host port
+   ```
+   Check what's in use: `ss -tlnp | awk '{print $4}'`
+
+   On wopr-wsl ports 3000 and 3001 are taken — use **3002**.
+
+4. **Start with Docker Compose** (use `sudo` on wopr-wsl)
    ```bash
-   docker-compose up -d
+   sudo podman-compose up -d
    ```
 
-4. **Access the application**
-   - Application: http://localhost:3000
-   - MongoDB Express: http://localhost:8081
+5. **Access the application**
+   - Application: http://localhost:3002 (or whichever port you mapped above)
 
 5. **Test MongoDB Connection (Recommended)**
    ```bash
@@ -193,6 +223,9 @@ issue-tracker/
 │   │   ├── page.tsx             # Issues listing
 │   │   ├── new/                 # Create issue
 │   │   └── [id]/                # Issue detail/edit
+│   ├── features/                # Feature tracking (actions, components, pages)
+│   ├── assets/                  # Asset tracking, Tailscale sync UI and actions
+│   ├── api/v1/                  # REST API (issues, features, assets, projects, users, wiki, version)
 │   ├── wiki/                    # Wiki system
 │   │   ├── actions.ts           # Wiki Server Actions
 │   │   ├── components/          # Wiki components
@@ -212,11 +245,16 @@ issue-tracker/
 │   ├── auth.ts                  # Authentication logic
 │   ├── mongodb.ts               # MongoDB connection
 │   ├── utils.ts                 # Utility functions
+│   ├── claims.ts                # Issue claim expiry
+│   ├── asset-types.ts           # Assets page grouping
+│   ├── tailscale-*.ts           # Tailscale API client, sync planner, runner, scheduler
 │   └── types/                   # TypeScript type definitions
-│       ├── index.ts
-│       ├── issue.ts
-│       ├── user.ts
-│       └── wiki.ts
+├── mcp-server/                  # MCP server for AI agents (separate build, see its README)
+├── tests/                       # Unit tests (npm test) and fixtures
+├── docs/                        # Specs and operations docs
+├── scripts/                     # DB scripts, sync.sh and deploy.sh
+├── instrumentation.ts           # Starts the Tailscale background sync
+├── BUILD_NUMBER                 # Build number shown in the UI, bumped by scripts/sync.sh
 ├── public/                      # Static assets
 ├── Dockerfile                   # Docker configuration
 ├── docker-compose.yml           # Docker Compose setup
@@ -249,6 +287,23 @@ MONGODB_URI=mongodb://localhost:27017/issue-tracker
 NEXTAUTH_SECRET=your-secret-key-change-this-in-production
 NEXTAUTH_URL=http://localhost:3000
 ```
+
+### Optional environment variables
+
+```env
+# Tailscale host discovery (see docs/TAILSCALE_SYNC.md). Needs an OAuth client with the
+# read-only devices:core:read scope; the secret starts with tskey-client-
+TAILSCALE_OAUTH_CLIENT_ID=
+TAILSCALE_OAUTH_CLIENT_SECRET=
+TAILSCALE_SYNC_INTERVAL_MINUTES=60     # 0 disables the schedule ("Sync now" still works)
+TAILSCALE_KEY_EXPIRY_WARN_DAYS=14
+TAILSCALE_OFFLINE_HOURS=24
+
+# Issue claims expire so abandoned work is re-offered to other agents
+CLAIM_TTL_HOURS=4
+```
+
+The container reads the mounted `.env` at startup, so after changing it restart the container (no rebuild needed).
 
 ### MongoDB Setup
 
@@ -327,6 +382,31 @@ export interface Issue {
 
 ## 🚀 Deployment
 
+### Releasing with the scripts (Podman in WSL)
+
+The live app runs as `issues_app_1` (image `localhost/issues_app`) on port 3002. From the project folder in WSL:
+
+```bash
+bash scripts/deploy.sh
+```
+
+It does, in order:
+1. `scripts/sync.sh`: adds 1 to `BUILD_NUMBER`, commits it and pushes to GitHub (so GitHub always has what is deployed). Commit your work first; uncommitted changes are listed but not included.
+2. Tags the running image as `localhost/issues_app:build-<previous>` (your rollback point).
+3. Rebuilds the image, then `down` + `up -d --no-build` (a plain `up --build` does not replace the running container).
+4. Checks `GET /api/v1/version` and fails loudly if the new build is not live.
+
+The build number is shown at the bottom of the sidebar and returned by `GET /api/v1/version` (no login needed).
+
+**Roll back:**
+```bash
+sudo podman tag localhost/issues_app:build-<N> localhost/issues_app:latest
+sudo podman-compose down && sudo podman-compose up -d --no-build
+```
+Nothing is migrated on startup, so a rollback needs no data cleanup; fields added by newer builds are ignored by older ones.
+
+After pulling a release that changes the MCP server, rebuild it (`cd mcp-server && npm run build`; `build/` is not in git) and restart each client's MCP connection.
+
 ### Docker Deployment (Production)
 
 1. **Build and deploy**
@@ -390,20 +470,26 @@ The architecture is designed for easy extension:
 - Indexes for performance
 - Migration scripts in `mongo-init.js`
 
-## 🤖 AI Integration Ready
+## 🤖 Working with AI agents
 
-The architecture is prepared for AI agent integrations:
+The tracker is built to be used by a small team of humans plus AI developers and an AI PM, through the REST API or the MCP server (`mcp-server/`, see its README for tools and setup).
 
-- **Vercel AI SDK**: Easily add AI chatbots and assistants
-- **Server Actions**: Perfect for AI-powered data operations
-- **Type Safety**: Ensures reliable AI integrations
-- **Modular Structure**: Add AI features without disrupting existing code
+**Give every agent its own user and API key.** Claims, assignment and attribution are per user; agents sharing one key would look like one person.
 
-Example AI integration points:
-- Issue summarization and prioritization
-- Automated issue assignment
-- Wiki content generation
-- Smart search and recommendations
+**Typical agent loop**
+1. `get_next_work`: returns the highest-priority unclaimed backlog issue (oldest first), moves it to In Progress, assigns it to the agent if unassigned, and **claims** it. Optionally scoped to a project or feature.
+2. Work on it; call `claim_issue` again on long tasks to refresh the claim.
+3. `update_issue` to `fixed` / `wont_fix` when done (closing releases the claim), or `release_issue` to hand it back.
+4. After a restart, `get_my_work` lists the agent's open assigned or claimed issues.
+
+**Rules**
+- A claim expires after `CLAIM_TTL_HOURS` (default 4), after which the issue is offered again, so a crashed agent cannot hold work forever.
+- Claiming someone else's live claim fails with HTTP 409 naming the holder.
+- `get_next_work` never hands an agent an issue assigned to someone else.
+
+**REST equivalents:** `POST /api/v1/issues/{id}/claim`, `DELETE /api/v1/issues/{id}/claim`, `GET|POST /api/v1/issues/next`, `GET /api/v1/issues?mine=true`.
+
+Features group issues: `list_features` / `get_feature` show progress (done / total linked issues), and `GET /api/v1/issues?featureId=CUS-F001` lists what is left on one.
 
 ## 🧪 Testing
 
@@ -445,11 +531,20 @@ npm run build        # Build for production
 npm run start        # Start production server
 
 # Testing
+npm test             # Unit tests (Tailscale sync planner and client, asset grouping)
 npm run test:mongodb # Test MongoDB connection
 
 # Code Quality
 npm run lint         # Run ESLint
 npm run type-check   # Run TypeScript compiler
+
+# Release (WSL, Podman)
+bash scripts/deploy.sh        # Sync to GitHub (bumps build number), rebuild, swap, verify
+bash scripts/sync.sh          # Only bump the build number and push
+
+# One-off data scripts
+node scripts/add-feature-indexes.js     # Indexes for features (run once)
+node scripts/clear-needs-review.js      # Clear stale Needs-review flags (dry run; --apply to write)
 
 # Docker
 docker-compose up -d          # Start containers
@@ -513,6 +608,10 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [ ] Advanced permissions system
 - [ ] Time tracking and reporting
 - [ ] Integration with external tools (GitHub, Slack, etc.)
+- [ ] Feature comments and PM status updates (on-track / at-risk / blocked)
+- [ ] Activity log of who (human or AI) changed what
+- [ ] Issue relations (blocks / blocked-by) that `get_next_work` respects
+- [ ] "Stale host" flag in Assets for devices offline for weeks
 
 ---
 

@@ -121,6 +121,8 @@ Add to your Goose configuration:
 - `get_issue_comments` - Get issue comments
 - `add_issue_comment` - Add comment to issue
 
+Useful parameters: `list_issues` takes `featureId` (ID or number like `CUS-F001`); `create_issue` and `update_issue` take `featureId` to link an issue to a feature (`null` on update unlinks); `update_issue` takes `assigneeId: null` to unassign. Issue ids can be the ObjectId or the number (`ISS-014`).
+
 ### Work Claiming (for multiple agents)
 - `get_next_work` - Get (and by default claim) the highest-priority unclaimed issue
 - `claim_issue` - Claim a specific issue; fails if someone else holds it
@@ -138,7 +140,7 @@ Claims expire after `CLAIM_TTL_HOURS` (default 4) so abandoned work is re-offere
 - `get_tailscale_sync_status` - Is Tailscale discovery configured, and how did the last sync go
 - `sync_tailscale_assets` - Run the Tailscale discovery now
 
-Store account names only in `accounts`, never passwords or keys.
+Store account names only in `accounts`, never passwords or keys. `customFields` (key/value pairs) holds anything else worth recording; same rule. `type` is free-form, but the Assets page groups by `physical server`, `virtual server`, `desktop`, `laptop`, `device` (in that order). Assets found by the Tailscale sync have a read-only `tailscale` section and may carry a `needsReview` flag, which any `update_asset` call clears. `update_asset` takes `cost: null` to clear the cost.
 
 ### Feature Management
 - `list_features` - List features with filtering
@@ -166,6 +168,13 @@ Store account names only in `accounts`, never passwords or keys.
 - `create_wiki_page` - Create new wiki page
 - `update_wiki_page` - Update wiki page
 - `delete_wiki_page` - Delete wiki page
+
+## Setup notes for agents
+
+- **Base URL:** the default is `http://localhost:3000/api/v1`. The provided compose file maps the app to port **3002**, so set `ISSUE_TRACKER_BASE_URL=http://localhost:3002/api/v1` (or whatever port you run on) in each client's MCP config.
+- **One API key per agent.** Claims and assignment are per user, so agents sharing a key cannot lock each other out. Create a user and key per agent on the Users page.
+- **Rebuild after updates.** `build/` is not in git. After pulling, run `npm run build` in `mcp-server/`, then fully restart each client (for Claude Desktop, quit it from the system tray, not just the window) so it loads the new tool list.
+- **Check which build is live:** `GET /api/v1/version` returns the app's build number.
 
 ## Resources
 
