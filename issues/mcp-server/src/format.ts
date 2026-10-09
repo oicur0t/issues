@@ -22,3 +22,17 @@ export function formatAsset(asset: Asset): string {
     (asset.needsReview ? '  Needs review: discovered via Tailscale, manual fields still empty\n' : '') +
     (asset.tailscale?.warnings?.length ? `  Warnings: ${asset.tailscale.warnings.map(w => w.message).join('; ')}\n` : '');
 }
+
+/** Exact text returned by the create_asset tool */
+export function formatAssetCreatedResponse(asset: Asset): string {
+  return `Asset created successfully!
+
+${formatAsset(asset)}  ID: ${asset._id}`;
+}
+
+/** Exact text returned by the update_asset tool */
+export function formatAssetUpdatedResponse(asset: Asset): string {
+  return `Asset updated successfully!
+
+${formatAsset(asset)}  ID: ${asset._id}`;
+}

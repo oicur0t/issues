@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { formatAsset, formatProject } from '../mcp-server/src/format'
+import { formatAsset, formatProject, formatAssetUpdatedResponse, formatAssetCreatedResponse } from '../mcp-server/src/format'
 
 // Regression tests for ISS-021: update_asset printed linked projects as "undefined (role)"
 // because the API returned the raw stored shape ({ projectId, role }) with no key.
@@ -67,5 +67,44 @@ describe('formatAsset', () => {
 
   test('omits the Projects line when there are none', () => {
     assert.doesNotMatch(formatAsset({ ...base, projects: [] }), /Projects:/)
+  })
+})
+
+// The exact acceptance test from ISS-021: the update_asset response text contains the project key
+// (e.g. "ISS (Host)") and never contains "undefined (".
+describe('update_asset response text (ISS-021)', () => {
+  const wopr = (projects: any[]): any => ({ ...base, _id: '69377421a1d867c40da2c430', projects })
+
+  test('contains the project key for the populated shape the API now returns', () => {
+    const text = formatAssetUpdatedResponse(
+      wopr([
+        { _id: 'p1', key: 'ISS', name: 'Issues', role: 'Host' },
+        { _id: 'p2', key: 'APP', name: 'Wrangl App', role: 'dev environment' },
+        { _id: 'p3', key: 'WWW', name: 'wrangl.ca', role: 'dev environment' },
+        { _id: 'p4', key: 'SML', name: 'Small Apps', role: 'dev environment' },
+      ])
+    )
+    assert.ok(text.includes('ISS (Host)'), text)
+    assert.ok(text.includes('APP (dev environment)'), text)
+    assert.ok(!text.includes('undefined ('), text)
+    assert.match(text, /^Asset updated successfully!/)
+    assert.ok(text.includes('ID: 69377421a1d867c40da2c430'))
+  })
+
+  test('never contains "undefined (" even for the raw stored shape', () => {
+    const text = formatAssetUpdatedResponse(
+      wopr([
+        { projectId: 'a', role: 'Host' },
+        { projectId: 'b', role: 'dev environment' },
+      ])
+    )
+    assert.ok(!text.includes('undefined ('), text)
+  })
+
+  test('the create_asset response behaves the same', () => {
+    const text = formatAssetCreatedResponse(wopr([{ _id: 'p1', key: 'ISS', name: 'Issues', role: 'Host' }]))
+    assert.ok(text.includes('ISS (Host)'), text)
+    assert.ok(!text.includes('undefined ('), text)
+    assert.match(text, /^Asset created successfully!/)
   })
 })

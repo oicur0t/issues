@@ -4,7 +4,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { IssueTrackerClient } from './client.js';
-import { formatAsset } from './format.js';
+import { formatAsset, formatAssetCreatedResponse, formatAssetUpdatedResponse } from './format.js';
 import type { 
   Issue, 
   Project, 
