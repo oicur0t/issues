@@ -1,6 +1,7 @@
 /**
  * One-off cleanup: clear the Tailscale "needs review" flag on assets that already have
- * hand-entered details (provider, location, description, cost, custom fields or project links).
+ * hand-entered details (provider, location, description, cost, custom fields, project links,
+ * a type other than 'host', or extra tags).
  * Shows what it would change; nothing is written without --apply.
  *
  * Run with: node scripts/clear-needs-review.js          (dry run)
@@ -35,9 +36,12 @@ async function run() {
     const assets = client.db('issues').collection('assets');
 
     const flagged = await assets.find({ needsReview: true }).toArray();
+    // The sync creates assets as type 'host' tagged only 'tailscale'. Anything beyond that was done by hand.
     const reviewed = flagged.filter(a =>
       a.provider || a.location || a.description || a.cost !== undefined ||
-      (a.customFields && a.customFields.length > 0) || (a.projects && a.projects.length > 0)
+      (a.customFields && a.customFields.length > 0) || (a.projects && a.projects.length > 0) ||
+      (a.type && a.type !== 'host') ||
+      (a.tags && a.tags.some(t => t !== 'tailscale'))
     );
 
     console.log(`${flagged.length} assets flagged needs-review; ${reviewed.length} already have hand-entered details:`);
