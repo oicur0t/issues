@@ -356,7 +356,7 @@ export default async function HomePage() {
                     <Link
                       key={category.key}
                       href="/assets"
-                      className="p-3 border-2 border-black bg-cyan-50 hover:translate-x-0.5 hover:translate-y-0.5 transition-transform"
+                      className="p-3 border-2 border-black bg-cyan-50 text-center hover:translate-x-0.5 hover:translate-y-0.5 transition-transform"
                     >
                       <div className="text-xs font-bold text-black/70">{category.label}</div>
                       <div className="text-2xl font-black">{category.count}</div>
