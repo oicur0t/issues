@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation'
 import { getCurrentUserProfile } from '@/app/users/actions'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ApiKeyDisplay } from './components/ApiKeyDisplay'
-import { User, KeyRound, Mail, Shield, Calendar } from 'lucide-react'
+import { ChangePasswordForm } from './components/ChangePasswordForm'
+import { User, KeyRound, Lock, Mail, Shield, Calendar } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
@@ -60,6 +61,22 @@ export default async function ProfilePage() {
             </CardHeader>
             <CardContent>
               <ApiKeyDisplay apiKey={user.apiKey} />
+            </CardContent>
+          </Card>
+
+          {/* Change Password */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Change Password
+              </CardTitle>
+              <CardDescription>
+                Enter your current password and choose a new one.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChangePasswordForm />
             </CardContent>
           </Card>
 

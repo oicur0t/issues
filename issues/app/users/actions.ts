@@ -14,6 +14,7 @@ import { isEmptyOrWhitespace, isValidEmail } from '@/lib/utils'
 import crypto from 'crypto'
 import bcrypt from 'bcrypt'
 import { isApiAuthError } from '@/lib/api-errors'
+import { validatePasswordChange } from '@/lib/password'
 
 const SALT_ROUNDS = 12
 
@@ -406,6 +407,48 @@ export async function getCurrentUserProfile(): Promise<User | null> {
   } catch (error) {
     console.error('Error getting current user profile:', error)
     throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to get user profile')
+  }
+}
+
+/**
+ * Changes the current user's password. Requires the current password, so a
+ * stolen session cookie alone can't be used to lock the owner out.
+ */
+export async function changeMyPassword(
+  currentPassword: string,
+  newPassword: string,
+  confirmPassword: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const currentUser = await requireAuth('viewer')
+
+    const validationError = validatePasswordChange(currentPassword, newPassword, confirmPassword)
+    if (validationError) {
+      return { success: false, error: validationError }
+    }
+
+    const usersCollection = await getCollection('users')
+    const user = await usersCollection.findOne({ _id: currentUser._id, isActive: true })
+
+    if (!user?.password) {
+      return { success: false, error: 'Your account has no password set. Contact an administrator.' }
+    }
+
+    if (!(await bcrypt.compare(currentPassword, user.password))) {
+      return { success: false, error: 'Current password is incorrect' }
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS)
+    await usersCollection.updateOne(
+      { _id: currentUser._id },
+      { $set: { password: hashedPassword, updatedAt: new Date() } }
+    )
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error changing password:', error)
+    if (isApiAuthError(error)) throw error
+    return { success: false, error: 'Could not change password. Please try again.' }
   }
 }
 
