@@ -1,73 +1,76 @@
 import { MongoClient, Db } from 'mongodb'
 import { readFileSync } from 'fs'
-import { join } from 'path'
+import { createConnectionManager } from './db-connection'
 
-if (!process.env.MONGODB_URI) {
-  throw new Error('Invalid/Missing environment variable: "MONGODB_URI"')
-}
+function buildClient(): MongoClient {
+  const uri = process.env.MONGODB_URI
+  if (!uri) {
+    throw new Error('Invalid/Missing environment variable: "MONGODB_URI"')
+  }
 
-const uri = process.env.MONGODB_URI
-const options: any = {
-  // Add default options for better SSL/TLS compatibility
-  serverSelectionTimeoutMS: 10000,
-  socketTimeoutMS: 45000,
-}
+  const options: any = {
+    serverSelectionTimeoutMS: 10000,
+    socketTimeoutMS: 45000,
+    // Atlas may pause/resume clusters to save cost: keep probing so a resumed
+    // cluster is picked up quickly instead of waiting on a long backoff.
+    heartbeatFrequencyMS: 10000,
+  }
 
-// Configure X.509 certificate authentication if cert path is provided
-if (process.env.MONGODB_CERT_PATH) {
-  try {
-    const certPath = process.env.MONGODB_CERT_PATH
+  // Configure X.509 certificate authentication if cert path is provided
+  const certPath = process.env.MONGODB_CERT_PATH
+  if (certPath) {
     const certContent = readFileSync(certPath, 'utf8')
-
-    // Split certificate and private key
-    const certMatch = certContent.match(/-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/)
-    const keyMatch = certContent.match(/-----BEGIN PRIVATE KEY-----[\s\S]+?-----END PRIVATE KEY-----/)
-
-    if (!certMatch || !keyMatch) {
-      throw new Error('Invalid certificate format - missing cert or key')
+    if (
+      !/-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/.test(certContent) ||
+      !/-----BEGIN PRIVATE KEY-----[\s\S]+?-----END PRIVATE KEY-----/.test(certContent)
+    ) {
+      throw new Error('Failed to configure MongoDB certificate: missing cert or key in ' + certPath)
     }
 
     options.tls = true
     options.tlsCertificateKeyFile = certPath
-    // Note: authMechanism and authSource are already in the URI, don't duplicate
+    // authMechanism and authSource are already in the URI, don't duplicate.
     // Relax TLS validation for M10 compatibility
     options.tlsAllowInvalidCertificates = true
     options.tlsAllowInvalidHostnames = true
-
-    console.log('MongoDB X.509 authentication configured')
-    console.log('URI:', uri.replace(/mongodb\+srv:\/\/([^@]+@)?/, 'mongodb+srv://***@'))
-    console.log('Cert path:', certPath)
-    console.log('Cert found:', !!certMatch)
-    console.log('Key found:', !!keyMatch)
-    console.log('Options:', JSON.stringify(options, null, 2))
-  } catch (error) {
-    console.error('Error configuring MongoDB certificate:', error)
-    throw new Error('Failed to configure MongoDB certificate: ' + (error as Error).message)
   }
+
+  return new MongoClient(uri, options)
 }
 
-let client: MongoClient
-let clientPromise: Promise<MongoClient>
-
-if (process.env.NODE_ENV === 'development') {
-  // In development mode, use a global variable so that the value
-  // is preserved across module reloads caused by HMR (Hot Module Replacement).
-  let globalWithMongo = global as typeof global & {
-    _mongoClientPromise?: Promise<MongoClient>
-  }
-
-  if (!globalWithMongo._mongoClientPromise) {
-    client = new MongoClient(uri, options)
-    globalWithMongo._mongoClientPromise = client.connect()
-  }
-  clientPromise = globalWithMongo._mongoClientPromise
-} else {
-  // In production mode, it's best to not use a global variable.
-  client = new MongoClient(uri, options)
-  clientPromise = client.connect()
+// Keep one manager per process, including across dev-mode hot reloads.
+const globalWithMongo = global as typeof global & {
+  _mongoConnection?: ReturnType<typeof createConnectionManager<MongoClient>>
 }
 
-export default clientPromise
+const connection =
+  globalWithMongo._mongoConnection ??
+  (globalWithMongo._mongoConnection = createConnectionManager<MongoClient>({
+    connect: async () => {
+      const client = buildClient()
+      try {
+        return await client.connect()
+      } catch (error) {
+        await client.close().catch(() => {})
+        throw error
+      }
+    },
+    close: client => client.close(),
+    onError: error => {
+      console.error(
+        '[MongoDB] Connection failed; will retry on the next request:',
+        error instanceof Error ? error.message : error
+      )
+    },
+  }))
+
+/**
+ * Resolves a connected client, reconnecting if the last attempt failed.
+ * Prefer getDatabase()/getCollection().
+ */
+export function getClient(): Promise<MongoClient> {
+  return connection.get()
+}
 
 /**
  * Gets a database instance from the MongoDB connection
@@ -75,14 +78,14 @@ export default clientPromise
  * @returns Promise<Db> - MongoDB database instance
  */
 export async function getDatabase(dbName: string = 'issues'): Promise<Db> {
-  const client = await clientPromise
+  const client = await getClient()
   return client.db(dbName)
 }
 
 /**
  * Helper function to get a collection from the database
  * @param collectionName - The name of the collection
- * @param dbName - The name of the database (optional, defaults to 'issue-tracker')
+ * @param dbName - The name of the database (optional, defaults to 'issues')
  * @returns Promise<Collection> - MongoDB collection instance
  */
 export async function getCollection(collectionName: string, dbName?: string) {
@@ -91,9 +94,8 @@ export async function getCollection(collectionName: string, dbName?: string) {
 }
 
 /**
- * Closes the MongoDB connection (useful for testing)
+ * Closes the MongoDB connection (useful for testing). The next call reconnects.
  */
 export async function closeConnection(): Promise<void> {
-  const client = await clientPromise
-  await client.close()
+  await connection.reset()
 }
