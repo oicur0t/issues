@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { formatDate, getUserInitials, generateAvatarColor } from '@/lib/utils'
-import { Search, Filter, Plus, X, BookOpen, Calendar, User, Eye, Edit } from 'lucide-react'
+import { Search, Filter, Plus, X, BookOpen, Calendar, Edit } from 'lucide-react'
 import Link from 'next/link'
 
 interface WikiListProps {
@@ -229,87 +229,76 @@ export function WikiList({ onCreateNew }: WikiListProps) {
           )}
         </div>
       ) : (
-        <div className="grid gap-4">
+        // Tiles: as many columns as fit (>= 18rem each), so widescreens fill out
+        <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(18rem,1fr))]">
           {wikiPages.map((page) => (
-            <div key={page._id?.toString()} className="card hover:shadow-md transition-shadow">
+            <div
+              key={page._id?.toString()}
+              className="card relative flex flex-col h-full hover:shadow-lg transition-shadow"
+            >
               <div className="card-header">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Link 
-                        href={`/wiki/${page.slug}`}
-                        className="text-lg font-medium text-primary hover:underline truncate"
-                      >
-                        {page.title}
-                      </Link>
-                      {!page.isPublished && (
-                        <Badge variant="secondary" className="badge-secondary">
-                          Draft
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    {page.summary && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                        {page.summary}
-                      </p>
-                    )}
-                    
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <User className="h-4 w-4" />
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className={`h-5 w-5 rounded-full flex items-center justify-center text-white text-xs font-medium ${generateAvatarColor(page.author.email)}`}
-                          >
-                            {getUserInitials(page.author.name)}
-                          </div>
-                          <span>{page.author.name}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        {formatDate(page.updatedAt)}
-                      </div>
-                      
-                      <div className="flex items-center gap-1">
-                        <Eye className="h-4 w-4" />
-                        Version {page.version}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 ml-4">
-                    <Link href={`/wiki/${page.slug}`}>
-                      <Button variant="ghost" size="sm" className="btn-ghost">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                    <Link href={`/wiki/${page.slug}/edit`}>
-                      <Button variant="ghost" size="sm" className="btn-ghost">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </div>
+                <div className="flex items-start justify-between gap-2">
+                  {/* Stretched link: the whole tile is clickable */}
+                  <Link
+                    href={`/wiki/${page.slug}`}
+                    className="text-lg font-black text-primary hover:underline line-clamp-2 after:absolute after:inset-0"
+                  >
+                    {page.title}
+                  </Link>
+                  {/* Sits above the stretched link so it stays separately clickable */}
+                  <Link
+                    href={`/wiki/${page.slug}/edit`}
+                    title="Edit page"
+                    className="relative z-10 shrink-0"
+                  >
+                    <Button variant="ghost" size="sm" className="btn-ghost">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </Link>
                 </div>
+                {!page.isPublished && (
+                  <Badge variant="secondary" className="badge-secondary mt-1 w-fit">
+                    Draft
+                  </Badge>
+                )}
               </div>
-              
-              {/* Tags */}
-              {page.tags.length > 0 && (
-                <div className="card-content pt-0">
+
+              <div className="card-content flex flex-col flex-1 gap-3 pt-0">
+                {page.summary && (
+                  <p className="text-sm text-muted-foreground line-clamp-3">
+                    {page.summary}
+                  </p>
+                )}
+
+                {page.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {page.tags.map((tag, index) => (
-                      <span 
-                        key={index}
-                        className="badge badge-secondary text-xs"
-                      >
+                      <span key={index} className="badge badge-secondary text-xs">
                         {tag}
                       </span>
                     ))}
                   </div>
+                )}
+
+                {/* mt-auto pins the meta to the bottom so tiles line up in a row */}
+                <div className="mt-auto pt-3 flex items-center justify-between gap-2 text-xs text-muted-foreground border-t-2 border-black/10">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <div
+                      className={`h-5 w-5 shrink-0 rounded-full flex items-center justify-center text-white text-[10px] font-medium ${generateAvatarColor(page.author.email)}`}
+                    >
+                      {getUserInitials(page.author.name)}
+                    </div>
+                    <span className="truncate font-bold">{page.author.name}</span>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {formatDate(page.updatedAt)}
+                    </span>
+                    <span>v{page.version}</span>
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           ))}
         </div>
