@@ -332,6 +332,7 @@ export async function deleteFeature(id: string): Promise<boolean> {
 
     await issuesCollection.updateMany({ featureId: feature._id }, { $unset: { featureId: '' } })
     await featuresCollection.deleteOne({ _id: feature._id })
+    await (await getCollection('comments')).deleteMany({ featureId: feature._id })
 
     revalidatePath('/features')
     revalidatePath('/issues')

@@ -8,6 +8,11 @@ import { Comment, CreateCommentData, UpdateCommentData } from '@/lib/types'
 import { isEmptyOrWhitespace } from '@/lib/utils'
 import { isApiAuthError } from '@/lib/api-errors'
 
+function revalidateCommentParent(comment: Record<string, unknown>) {
+  if (comment.issueId) revalidatePath(`/issues/${String(comment.issueId)}`)
+  if (comment.featureId) revalidatePath(`/features/${String(comment.featureId)}`)
+}
+
 /**
  * Creates a new comment on an issue
  */
@@ -146,7 +151,7 @@ export async function updateComment(commentId: string, data: UpdateCommentData):
       throw new Error('Comment not found')
     }
 
-    revalidatePath(`/issues/${updatedComment.issueId.toString()}`)
+    revalidateCommentParent(updatedComment)
 
     return updatedComment as Comment
   } catch (error) {
@@ -178,11 +183,9 @@ export async function deleteComment(commentId: string): Promise<void> {
       throw new Error('You can only delete your own comments')
     }
 
-    const issueId = comment.issueId.toString()
-
     await commentsCollection.deleteOne({ _id: new ObjectId(commentId) })
 
-    revalidatePath(`/issues/${issueId}`)
+    revalidateCommentParent(comment)
   } catch (error) {
     console.error('Error deleting comment:', error)
     throw isApiAuthError(error) ? error : new Error(error instanceof Error ? error.message : 'Failed to delete comment')

@@ -1,6 +1,6 @@
 # Features — Spec
 
-Status: v1 implemented (feature comments deferred to v1.1; no dashboard card yet) · Scope: new top-level "Features" module alongside Issues, Wiki, Assets.
+Status: v1 implemented, feature comments added (`GET/POST /features/:id/comments`, MCP `get_feature_comments` / `add_feature_comment`; run `node scripts/add-feature-indexes.js` for the new index); no dashboard card yet · Scope: new top-level "Features" module alongside Issues, Wiki, Assets.
 
 ## 1. Purpose
 

@@ -98,7 +98,8 @@ export interface WikiPage {
 
 export interface Comment {
   _id: string;
-  issueId: string;
+  issueId?: string;
+  featureId?: string;
   authorId: string;
   content: string;
   createdAt: string;

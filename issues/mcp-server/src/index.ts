@@ -1602,6 +1602,72 @@ server.tool(
   }
 );
 
+// Get Feature Comments
+server.tool(
+  'get_feature_comments',
+  'Get all comments on a feature (questions, progress notes, decisions), oldest first',
+  {
+    featureId: z.string().describe('The ID or number (e.g. CUS-F001) of the feature')
+  },
+  async ({ featureId }) => {
+    try {
+      const comments = await client.getFeatureComments(featureId);
+
+      return {
+        content: [{
+          type: 'text',
+          text: comments.length === 0
+            ? `No comments found for feature ${featureId}`
+            : `Comments for feature ${featureId}:\n\n${comments.map(comment =>
+                `${comment.author?.name || 'Unknown'} - ${comment.createdAt ? new Date(comment.createdAt).toLocaleString() : 'Unknown'}\n` +
+                `${comment.content}\n` +
+                `ID: ${comment._id}\n`
+              ).join('\n')}`
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error getting feature comments: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
+// Add Feature Comment
+server.tool(
+  'add_feature_comment',
+  'Add a comment to a feature, e.g. to raise a question or record progress on the work (Markdown supported)',
+  {
+    featureId: z.string().describe('The ID or number (e.g. CUS-F001) of the feature'),
+    content: z.string().describe('The comment content')
+  },
+  async ({ featureId, content }) => {
+    try {
+      const comment = await client.addFeatureComment(featureId, content);
+
+      return {
+        content: [{
+          type: 'text',
+          text: `Comment added successfully!\n\n` +
+            `${comment.author?.name || 'Unknown'} - ${comment.createdAt ? new Date(comment.createdAt).toLocaleString() : 'Unknown'}\n` +
+            `${comment.content}\n` +
+            `ID: ${comment._id}`
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `Error adding feature comment: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
 // Link Issue to Feature
 server.tool(
   'link_issue_to_feature',

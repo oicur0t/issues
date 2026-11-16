@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { createComment, deleteComment } from '../comments/actions'
+import { createFeatureComment } from '@/app/features/[id]/comments/actions'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
@@ -27,12 +28,14 @@ interface Comment {
 }
 
 interface IssueCommentsProps {
-  issueId: string
+  // Provide exactly one: comments attach to an issue or to a feature
+  issueId?: string
+  featureId?: string
   initialComments: Comment[]
   currentUserId: string
 }
 
-export function IssueComments({ issueId, initialComments, currentUserId }: IssueCommentsProps) {
+export function IssueComments({ issueId, featureId, initialComments, currentUserId }: IssueCommentsProps) {
   const [comments, setComments] = useState<Comment[]>(initialComments)
   const [newComment, setNewComment] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -44,10 +47,9 @@ export function IssueComments({ issueId, initialComments, currentUserId }: Issue
 
     startTransition(async () => {
       try {
-        const comment = await createComment({
-          issueId,
-          content: newComment,
-        })
+        const comment = featureId
+          ? await createFeatureComment({ featureId, content: newComment })
+          : await createComment({ issueId: issueId!, content: newComment })
 
         setComments([...comments, comment as any])
         setNewComment('')

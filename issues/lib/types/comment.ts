@@ -2,7 +2,9 @@ import { ObjectId } from 'mongodb'
 
 export interface Comment {
   _id?: ObjectId
-  issueId: ObjectId
+  // Exactly one of issueId / featureId is set
+  issueId?: ObjectId
+  featureId?: ObjectId
   authorId: ObjectId
   content: string
   createdAt: Date
@@ -11,6 +13,11 @@ export interface Comment {
 
 export interface CreateCommentData {
   issueId: string
+  content: string
+}
+
+export interface CreateFeatureCommentData {
+  featureId: string // ObjectId or feature number (e.g. CUS-F001)
   content: string
 }
 

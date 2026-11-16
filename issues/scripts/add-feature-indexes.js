@@ -50,6 +50,12 @@ async function addFeatureIndexes() {
     );
     console.log(`Index created: ${issueFeatureIndex}`);
 
+    const commentFeatureIndex = await db.collection('comments').createIndex(
+      { featureId: 1, createdAt: 1 },
+      { sparse: true, name: 'featureId_createdAt' }
+    );
+    console.log(`Index created: ${commentFeatureIndex}`);
+
     console.log('\nDone.');
   } finally {
     await client.close();

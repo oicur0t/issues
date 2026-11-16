@@ -2,6 +2,8 @@ import { notFound, redirect } from 'next/navigation'
 import { getCurrentSession } from '@/lib/auth'
 import { getFeature, getFeatureIssues, deleteFeature } from '@/app/features/actions'
 import { getAssignableUsers } from '@/app/users/actions'
+import { getFeatureComments } from './comments/actions'
+import { IssueComments } from '@/app/issues/[id]/components/IssueComments'
 import { serializeForApi } from '@/lib/api-utils'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Trash2 } from 'lucide-react'
@@ -30,7 +32,11 @@ export default async function FeaturePage({ params }: FeaturePageProps) {
     notFound()
   }
 
-  const [issues, users] = await Promise.all([getFeatureIssues(id), getAssignableUsers()])
+  const [issues, users, comments] = await Promise.all([
+    getFeatureIssues(id),
+    getAssignableUsers(),
+    getFeatureComments(id),
+  ])
 
   const canEdit = session.user.role === 'admin' || session.user.role === 'developer'
   const featureId = feature._id!.toString()
@@ -62,6 +68,12 @@ export default async function FeaturePage({ params }: FeaturePageProps) {
         issues={serializeForApi(issues)}
         users={users.filter(u => u._id).map(u => ({ _id: u._id!.toString(), name: u.name }))}
         canEdit={canEdit}
+      />
+
+      <IssueComments
+        featureId={featureId}
+        initialComments={serializeForApi(comments) as any}
+        currentUserId={session.user.id}
       />
     </div>
   )

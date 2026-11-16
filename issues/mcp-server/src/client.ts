@@ -198,6 +198,16 @@ export class IssueTrackerClient {
     return response.data;
   }
 
+  async getFeatureComments(id: string): Promise<Comment[]> {
+    const response = await this.request<{ data: Comment[] }>('GET', `/features/${id}/comments`);
+    return response.data;
+  }
+
+  async addFeatureComment(id: string, content: string): Promise<Comment> {
+    const response = await this.request<{ data: Comment }>('POST', `/features/${id}/comments`, { content });
+    return response.data;
+  }
+
   async linkIssueToFeature(featureId: string, issueId: string): Promise<void> {
     return this.request<void>('POST', `/features/${featureId}/issues`, { issueId });
   }
